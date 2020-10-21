@@ -51,6 +51,7 @@ public:
 	RigidBody();
 	~RigidBody();
 	Vector3D findVectorRelativeToBodyFrame(const Vector3D vector);
+	std::vector<Vector3D>* getAllPoints();
 	bool bodiesInCollisionRange(RigidBody* body);
 	double getCollisionRadius() const;
 	double getCollisionRadiusSquared() const;

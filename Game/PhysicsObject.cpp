@@ -60,6 +60,10 @@ RigidBody* PhysicsObject::getRigidBody() {
 	return body;
 }
 
+PolyModel* PhysicsObject::getModel() {
+	return model;
+}
+
 Vector3D PhysicsObject::getPos() {
 	return body->getCenterOfMass();
 }

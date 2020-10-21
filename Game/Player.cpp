@@ -6,8 +6,48 @@
 Player::Player(Vector3D position, GunType gun) {
 
 	this->gun = gun;
-	angularDampFactor = 1.5; //temporary
+	angularDampFactor = 3; //temporary
 	linearDampFactor = 0.45;
+
+	equippedTool = Guns;
+
+	MovingObject::createShipMesh(true, 35, olc::VERY_DARK_RED, olc::BLACK,
+		olc::VERY_DARK_MAGENTA, olc::BLACK, olc::DARK_GREEN, olc::VERY_DARK_GREEN, &body, &model);
+	//createStructure();
+
+	grabDist = body->getCollisionRadius() * 2;
+	missileRechargeTime.reset();
+	missileLockCos = cos(missileLockAngle);
+
+	applyUpgradeProfile(UpgradeProfile());
+
+	body->translate(position);
+	createRadarPoints();
+
+	findIVals();
+
+}
+
+Player::UpgradeProfile::UpgradeProfile() {
+	gun = Default;
+	hasMissiles = false;
+	hasGunsight = false;
+	thrustLevel = 1;
+	radarLevel = 1;
+}
+
+void Player::applyUpgradeProfile(const UpgradeProfile& upgrades) {
+	gun = upgrades.gun;
+	hasRockets = upgrades.hasMissiles;
+	hasGunsight = upgrades.hasGunsight;
+	pitchRate = 6;
+	yawRate = 6;
+	rollRate = 3;
+	forwardThrust = 850 + 300 * upgrades.thrustLevel;
+	radarRange = 1 + .5 * upgrades.radarLevel;
+	sideThrust = 650;
+	verticleThrust = 650;
+	nMaxRockets = 2;
 
 	switch (gun) {
 	case Default:
@@ -20,45 +60,169 @@ Player::Player(Vector3D position, GunType gun) {
 		shootTimer = CooldownTimer(0.07);
 		break;
 	}
+}
 
-	createStructure();
+void Player::createRadarPoints() {
+	int nRows = 10;
+	int nCols = 18;
+	radarPos = Vector3D(4, 2.5, 0);
+	
+	for (int i = 0; i < nCols; i++) {
+		double theta = 2 * 3.14159 * i / nCols;
+		for (int j = 0; j < nRows; j++) {
+			double phi = 3.14159 * (j + 1) / (nRows + 1);
+			radarPoints.push_back(radarPos.add(Vector3D(sin(phi) * cos(theta), cos(phi), sin(phi) * sin(theta)).multiply(radarSize)));
+		}
+	}
+}
 
-	body->translate(position);
+void Player::setEquippedTool(Tool t) {
+	switch (t) {
+	case Missiles:
+		if (hasRockets) {
+			if (equippedTool != t) {
+				targetLocked = false;
+			}
+			equippedTool = t;
+		}
+		break;
+	default:
+		equippedTool = t;
+	}
+	
+}
 
-	findIVals();
+void Player::getCameraPosOrient(Vector3D* posOut, Rotor* orientOut) {
+	*orientOut = Rotor(Vector3D(0, 1, 0), 3.14159 / 2.0).applyRotor(body->getOrientation());
+	*posOut = orientOut->rotate(Vector3D(0, 0, 65)).add(body->getCenterOfMass());
+}
+
+void Player::selectTarget(SpaceMinerGame* game) {
+	double maxCos = maxLockAng;
+	Enemy* newTarget = nullptr;
+	Vector3D dir = getDir();
+	for (Enemy* e : *game->getEnemies()) {
+		Vector3D toE = e->getPos().sub(getPos()).getUnitVector();
+		double cosAng = toE.dotProduct(dir);
+		if (cosAng > maxLockAng && (cosAng > maxCos || newTarget == target)) {
+			newTarget = e;
+			maxCos = cosAng;
+		}
+	}
+	if (newTarget != nullptr && newTarget != target) {
+		target = newTarget;
+		targetID = target->getRigidBody()->getID();
+		targetLocked = false;
+		targetLockTime.reset();
+	}
 }
 
 void Player::update(SpaceMinerGame* game, float fElapsedTime) {
+	if (target == nullptr) {
+		selectTarget(game);
+	}
+	else if (!game->getPhysicsEngine()->bodyInUse(targetID) || target->getPos().sub(getPos()).getUnitVector().dotProduct(getDir()) < maxLockAng) {
+		target = nullptr;
+	}
+	else {
+		timeStep = fElapsedTime;
+		savedPrevVel = targetPrevVel;
+		targetPrevVel = target->getRigidBody()->getVelocity();
+
+		if (equippedTool == Missiles && !targetLocked) {
+			double targetAngCos = target->getPos().sub(getPos()).getUnitVector().dotProduct(getDir());
+			if (targetAngCos >= missileLockCos) {
+				targetLockTime.updateTimer(fElapsedTime);
+				if (targetLockTime.isReady()) {
+					targetLocked = true;
+					targetLockTime.reset();
+				}
+			}
+			else {
+				targetLocked = false;
+				targetLockTime.reset();
+			}
+		}
+	}
+
+	if (nRockets < nMaxRockets) {
+		missileRechargeTime.updateTimer(fElapsedTime);
+		if (missileRechargeTime.isReady()) {
+			nRockets++;
+			missileRechargeTime.reset();
+		}
+	}
+	
+	missileFireRate.updateTimer(fElapsedTime);
 	shootTimer.updateTimer(fElapsedTime);
 	dampenMotion(fElapsedTime);
 }
 
-void Player::fireRocket(SpaceMinerGame* game) {
-	double launchVel = 900;
-	Vector3D launchDir = body->getOrientation().rotate(Vector3D(0, 1, 0)).multiply(launchVel);
-
-	Vector3D dir = getDir();
-	Enemy* closest = nullptr;
-	double closestDist = INFINITY;
-	for (Enemy* e : *game->getEnemies()) {
-		double d = e->getPos().sub(getPos()).getMagnitude();
-		if (d < closestDist && e->getPos().sub(getPos()).dotProduct(dir) > 0) {
-			closestDist = d;
-			closest = e;
+Ore* Player::getOreToGrab(SpaceMinerGame* game) {
+	double closestAngle = 0;
+	Ore* grabbedOre = nullptr;
+	for (Ore* o : *game->getOre()) {
+		Vector3D toOre = o->getPos().sub(getPos());
+		double grabAngle = getDir().dotProduct(toOre.getUnitVector());
+		if (toOre.getMagnitudeSquared() < grabDist * grabDist && grabAngle > closestAngle) {
+			grabbedOre = o;
+			closestAngle = grabAngle;
 		}
 	}
-
-	Missile* missile = new Missile(body->getCenterOfMass(), body->getOrientation(), body->getVelocity().add(launchDir), closest, body->getID(), true);
-	game->addProjectile(missile);
+	return grabbedOre;
 }
 
-void Player::shoot(SpaceMinerGame* game) {
+double Player::getKMToP(Vector3D p) {
+	return p.sub(getPos()).getMagnitude() / KM_CONST;
+}
+
+Asteroid* Player::getTargetedAsteroid(SpaceMinerGame* game) {
+	double closestAsteroid = 0.5 * KM_CONST; //max dist
+	Asteroid* asteroid = nullptr;
+	double rExpandFactor = 2;
+	for (Asteroid* a : *game->getAsteroids()) {
+		Vector3D toA = a->getPos().sub(getPos());
+		double distSqrd = toA.getMagnitudeSquared();
+		if (distSqrd < closestAsteroid * closestAsteroid) {
+			double dist = sqrt(distSqrd);
+			double ang = acos(getDir().dotProduct(toA.getUnitVector()));
+			double r = a->getRigidBody()->getCollisionRadius();
+			double reqAng = atan(r * rExpandFactor / dist);
+			if (ang <= reqAng) {
+				closestAsteroid = dist;
+				asteroid = a;
+			}
+		}
+	}
+	return asteroid;
+}
+
+void Player::pickUpOre(SpaceMinerGame* game) {
+	Ore* ore = getOreToGrab(game);
+	if (ore != nullptr) {
+		ore->pickUp();
+		Ore::Material material = ore->getMaterial();
+		inventory[(int)material]++;
+	}
+}
+
+void Player::fireRocket(SpaceMinerGame* game) {
+	if (nRockets > 0 && missileFireRate.isReady() && targetLocked) {
+		nRockets--;
+		double launchVel = 900;
+		Vector3D launchDir = body->getOrientation().rotate(Vector3D(0, 1, 0)).multiply(launchVel);
+		Missile* missile = new Missile(body->getCenterOfMass(), body->getOrientation(), body->getVelocity().add(launchDir), target, body->getID(), true);
+		game->addProjectile(missile);
+		missileFireRate.reset();
+	}
+}
+
+void Player::fireBullet(SpaceMinerGame* game) {
 	if (shootTimer.isReady()) {
 		shootTimer.reset();
 
 		Vector3D dir = body->getOrientation().rotate(Vector3D(1, 0, 0));
 		double spawnDist = 150;
-		double speed = 4500;
 
 		Vector3D variation(0, 0, 0);
 		Vector3D offset;
@@ -72,511 +236,201 @@ void Player::shoot(SpaceMinerGame* game) {
 			r = 22;
 			offset = body->getOrientation().rotate(Vector3D(0, 0, 1));
 			offset = offset.multiply(r * twinDir);
-        	twinDir *= -1;
+			twinDir *= -1;
 			spawnPos = spawnPos.add(offset);
 			break;
 		case Gatling:
 			variation = Vector3D(0.5 - (float)rand() / RAND_MAX, 0.5 - (float)rand() / RAND_MAX, 0.5 - (float)rand() / RAND_MAX).getUnitVector().multiply(0.04);
 			break;
 		}
-		
 
-		Bullet* bullet = new Bullet(spawnPos, body->getOrientation(), body->getVelocity().add(dir.add(variation).multiply(speed)), 700, body->getID(), olc::RED, olc::WHITE);
+
+		Bullet* bullet = new Bullet(spawnPos, body->getOrientation(), body->getVelocity().add(dir.add(variation).multiply(bulletVel)), 700, body->getID(), olc::RED, olc::WHITE);
 		game->addProjectile(bullet);
 	}
 }
 
-void Player::createStructure() {
+void Player::shoot(SpaceMinerGame* game) {
+	switch (equippedTool) {
+	case Guns:
+		fireBullet(game);
+		break;
+	case Missiles:
+		fireRocket(game);
+		break;
+	}
+}
 
-	olc::Pixel color = olc::VERY_DARK_RED;
-	olc::Pixel lineColor = olc::BLACK;
+void Player::drawPlayerUI(SpaceMinerGame* g, double FOV) {
+	static char buff[64];
 
-	std::vector<Vector3D> points;
-	std::vector<ConvexHull*> hulls;
-	std::vector<Polygon3D> polygons;
+	olc::Pixel color = olc::CYAN;
 
-	//wings
-	points.push_back(Vector3D(0, 0, 0));
-	points.push_back(Vector3D(1, 4, 5));
-	points.push_back(Vector3D(1, 4, -5));
-	points.push_back(Vector3D(8, 3, 4));
-	points.push_back(Vector3D(8, 3, -4));
-	points.push_back(Vector3D(4, 2, 2.5));
-	points.push_back(Vector3D(4, 2, -2.5));
-	points.push_back(Vector3D(4.5, 1, 1));
-	points.push_back(Vector3D(4.5, 1, -1));
+	int centerX = g->ScreenWidth() / 2;
+	int centerY = g->ScreenHeight() / 2;
 
-	//head + body
-	//9
-	points.push_back(Vector3D(8.5, 1.5, 0));
-	points.push_back(Vector3D(6.5, 1, 1.5));
-	points.push_back(Vector3D(6.5, 1, -1.5));
-	points.push_back(Vector3D(4, 1, 1));
-	points.push_back(Vector3D(4, 1, -1));
+	//draw crosshair
+	if (equippedTool != Missiles) {
+		double lineWidth = 1;
+		double gapSize = 6;
+		double size = 10;
 
-	//14
-	points.push_back(Vector3D(7, 2, 0));
-	points.push_back(Vector3D(4.25, 1.5, 0));
-	points.push_back(Vector3D(8, 1, 0));
-	points.push_back(Vector3D(6, 1.0 / 3, 1));
-	points.push_back(Vector3D(6, 1.0 / 3, -1));
-	points.push_back(Vector3D(6, -0.5, 0));
-	points.push_back(Vector3D(5, 0, 0));
+		g->FillRect(centerX - (gapSize + size), centerY - lineWidth / 2, size, lineWidth, color);
+		g->FillRect(centerX + gapSize, centerY - lineWidth / 2, size, lineWidth, color);
+		g->FillRect(centerX - lineWidth / 2.0, centerY - (gapSize + size), lineWidth, size, color);
+		g->FillRect(centerX - lineWidth / 2.0, centerY + (gapSize), lineWidth, size, color);
+	}
+	else {
+		double lockOnRadius = FOV * sin(missileLockAngle);
+		g->DrawCircle(centerX, centerY, lockOnRadius, color);
+		
+		if (nRockets == 0) {
+			g->DrawString(centerX - 5 * 8, centerY, "NO MISSILE", color, 1);
+		}
+		else {
+			sprintf_s(buff, "MISSILE: %d", nRockets);
+			g->DrawString(centerX - 5 * 8, centerY + lockOnRadius + 4, buff, color, 1);
+		}
+	}
+	Vector3D camPos;
+	Rotor camOrient;
+	getCameraPosOrient(&camPos, &camOrient);
+	//highlight enemy target
+	
+	if (target != nullptr) {
+		Vector3D toEnemy = target->getPos().sub(getPos());
+		if (getDir().dotProduct(toEnemy) > 0) {
 
-	//21
-	points.push_back(Vector3D(5, 1, 1));
-	points.push_back(Vector3D(5, 1, -1));
+			double r1Min = 12;
+			
+			double r1 = target->getRigidBody()->getCollisionRadius() * 1.25 * FOV / getDir().dotProduct(toEnemy);
+			r1 = std::max(r1Min, r1);
+			Vector3D enemyScreenPos = g->getPixelCoord(target->getPos(), camPos, camOrient, FOV);
+			double enemyDist = getKMToP(target->getPos());
+			sprintf_s(buff, "%.2f KM", enemyDist);
+			g->DrawString(enemyScreenPos.x - 3 * 8, enemyScreenPos.y + r1 + 4, buff, color, 1);
 
-	//23
-	points.push_back(Vector3D(2, 2, 1.75));
-	points.push_back(Vector3D(2, 2, -1.75));
-	points.push_back(Vector3D(-0.5, 2.5, 2));
-	points.push_back(Vector3D(-0.5, 2.5, -2));
-	points.push_back(Vector3D(-0.5, 2.5, 0.5));
-	points.push_back(Vector3D(-0.5, 2.5, -0.5));
-	points.push_back(Vector3D(-0.5, 1, 1.25));
-	points.push_back(Vector3D(-0.5, 1, -1.25));
+			if (equippedTool == Guns) {
+				g->DrawCircle(enemyScreenPos.x, enemyScreenPos.y, r1, color);
 
-	//31
-	points.push_back(Vector3D(2, 2.25, 0));
-	points.push_back(Vector3D(-0.5, 1, 0.25));
-	points.push_back(Vector3D(-0.5, 1, -0.25));
-	points.push_back(Vector3D(1.5, 0.75, 0));
-	points.push_back(Vector3D(1, 1, 1.25));
-	points.push_back(Vector3D(1, 1, -1.25));
+				if (hasGunsight && enemyDist <= 1.5) {
+					double r2 = 7;
+					Vector3D leadPos = getPos().add(Projectile::calculateLeadPoint(getPos(), target->getPos(), body->getVelocity(), target->getRigidBody()->getVelocity(),
+						bulletVel, true, 0, targetPrevVel, timeStep));
+					Vector3D leadScreenPos = g->getPixelCoord(leadPos, camPos, camOrient, FOV);
+					g->DrawCircle(leadScreenPos.x, leadScreenPos.y, r2, color);
 
-	//37
-	points.push_back(Vector3D(1, 3.7, 5.3));
-	points.push_back(Vector3D(1, 3.7, -5.3));
-	points.push_back(Vector3D(4, 1.8, 2.7));
-	points.push_back(Vector3D(4, 1.8, -2.7));
+					Vector3D r1ToR2 = leadScreenPos.sub(enemyScreenPos);
+					double dist = r1ToR2.getMagnitude();
+					if (dist > r2 + r1) {
+						Vector3D p1 = enemyScreenPos.add(r1ToR2.multiply(r1 / dist));
+						Vector3D p2 = enemyScreenPos.add(r1ToR2.multiply((dist - r2) / dist));
+						g->DrawLine(p1.x, p1.y, p2.x, p2.y, color);
+					}
+				}
+			}
+			else if (equippedTool == Missiles) {
+				olc::Pixel mColor = targetLocked ? olc::RED : color;
 
-	for (int i = 0; i < points.size(); i++) {
-		points.at(i) = points.at(i).multiply(35);
+				g->DrawRect(enemyScreenPos.x - r1, enemyScreenPos.y - r1, r1 * 2, r1 * 2, mColor);
+				double flickerRate = 2;
+				double t = flickerRate * fmod(targetLockTime.getTime(), 1.0 / flickerRate);
+				if (targetLocked || t > 0.5) {
+					g->DrawLine(enemyScreenPos.x, enemyScreenPos.y - r1, enemyScreenPos.x + r1, enemyScreenPos.y, mColor);
+					g->DrawLine(enemyScreenPos.x + r1, enemyScreenPos.y, enemyScreenPos.x, enemyScreenPos.y + r1, mColor);
+					g->DrawLine(enemyScreenPos.x, enemyScreenPos.y + r1, enemyScreenPos.x - r1, enemyScreenPos.y, mColor);
+					g->DrawLine(enemyScreenPos.x - r1, enemyScreenPos.y, enemyScreenPos.x, enemyScreenPos.y - r1, mColor);
+				}
+			}
+			//accel lead
+			/*r2 = 7;
+			leadPos = getPos().add(Projectile::calculateLeadPoint(getPos(), target->getPos(), body->getVelocity(), target->getRigidBody()->getVelocity(), 
+				bulletVel));
+			leadScreenPos = g->getPixelCoord(leadPos, camPos, camOrient, FOV);
+			g->DrawCircle(leadScreenPos.x, leadScreenPos.y, r2, olc::RED);*/
+		}
 	}
 
-	polygons.push_back(Polygon3D(points.at(0), points.at(8), points.at(20), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(0), points.at(40), points.at(8), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(0), points.at(38), points.at(40), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(40), points.at(38), points.at(4), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(4), points.at(6), points.at(40), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(40), points.at(6), points.at(8), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(38), points.at(2), points.at(4), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(0), points.at(2), points.at(38), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(2), points.at(6), points.at(4), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(6), points.at(2), points.at(0), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(8), points.at(6), points.at(0), lineColor, color));
-	/*polygons.push_back(Polygon3D(points.at(20), points.at(8), points.at(22), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(20), points.at(22), points.at(11), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(20), points.at(11), points.at(18), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(16), points.at(18), points.at(11), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(11), points.at(9), points.at(16), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(14), points.at(9), points.at(11), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(14), points.at(11), points.at(22), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(14), points.at(22), points.at(13), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(14), points.at(13), points.at(15), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(15), points.at(13), points.at(24), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(15), points.at(24), points.at(31), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(31), points.at(24), points.at(26), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(31), points.at(26), points.at(28), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(28), points.at(26), points.at(30), olc::RED, olc::DARK_RED));//thruster
-	polygons.push_back(Polygon3D(points.at(28), points.at(30), points.at(33), olc::RED, olc::DARK_RED));//thruster
-	polygons.push_back(Polygon3D(points.at(15), points.at(28), points.at(33), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(15), points.at(33), points.at(34), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(31), points.at(28), points.at(15), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(26), points.at(24), points.at(30), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(30), points.at(24), points.at(13), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(33), points.at(30), points.at(36), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(33), points.at(36), points.at(34), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(34), points.at(36), points.at(0), lineColor, color));
-
-	polygons.push_back(Polygon3D(points.at(20), points.at(18), points.at(19), olc::VERY_DARK_GREEN, olc::DARK_GREEN));//cockpit
-	polygons.push_back(Polygon3D(points.at(18), points.at(16), points.at(19), olc::VERY_DARK_GREEN, olc::DARK_GREEN));//cockpit*/
-
-
-	///////////////////////////////
-	polygons.push_back(Polygon3D(points.at(7), points.at(0), points.at(20), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(39), points.at(0), points.at(7), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(37), points.at(0), points.at(39), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(37), points.at(39), points.at(3), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(3), points.at(39), points.at(5), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(5), points.at(39), points.at(7), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(1), points.at(37), points.at(3), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(1), points.at(0), points.at(37), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(5), points.at(1), points.at(3), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(1), points.at(5), points.at(0), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(5), points.at(7), points.at(0), lineColor, color));
-	/*polygons.push_back(Polygon3D(points.at(7), points.at(20), points.at(21), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(21), points.at(20), points.at(10), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(10), points.at(20), points.at(17), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(17), points.at(16), points.at(10), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(9), points.at(10), points.at(16), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(9), points.at(14), points.at(10), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(10), points.at(14), points.at(21), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(21), points.at(14), points.at(12), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(12), points.at(14), points.at(15), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(12), points.at(15), points.at(23), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(23), points.at(15), points.at(31), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(23), points.at(31), points.at(25), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(25), points.at(31), points.at(27), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(25), points.at(27), points.at(29), olc::RED, olc::DARK_RED));//thruster
-	polygons.push_back(Polygon3D(points.at(29), points.at(27), points.at(32), olc::RED, olc::DARK_RED));//thruster
-	polygons.push_back(Polygon3D(points.at(27), points.at(15), points.at(32), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(32), points.at(15), points.at(34), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(27), points.at(31), points.at(15), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(23), points.at(25), points.at(29), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(23), points.at(29), points.at(12), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(29), points.at(32), points.at(35), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(35), points.at(32), points.at(34), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(35), points.at(34), points.at(0), lineColor, color));*/
-
-	//polygons.push_back(Polygon3D(points.at(17), points.at(20), points.at(19), olc::VERY_DARK_GREEN, olc::DARK_GREEN));//cockpit
-	//polygons.push_back(Polygon3D(points.at(16), points.at(17), points.at(19), olc::VERY_DARK_GREEN, olc::DARK_GREEN));
-
-	//surfaces
-
-	std::vector<RigidSurface*> wing1;
-
-	std::vector<Vector3D> w1s1;
-	w1s1.push_back(points.at(3));
-	w1s1.push_back(points.at(37));
-	w1s1.push_back(points.at(39));
-	wing1.push_back(new RigidSurface(&w1s1, Vector3D(0, -1, 0)));
-
-	std::vector<Vector3D> w1s2;
-	w1s2.push_back(points.at(3));
-	w1s2.push_back(points.at(1));
-	w1s2.push_back(points.at(5));
-	wing1.push_back(new RigidSurface(&w1s2, Vector3D(0, 1, 0)));
-
-	std::vector<Vector3D> w1s3;
-	w1s3.push_back(points.at(3));
-	w1s3.push_back(points.at(1));
-	w1s3.push_back(points.at(37));
-	wing1.push_back(new RigidSurface(&w1s3, Vector3D(0, 0, 1)));
-
-	std::vector<Vector3D> w1s4;
-	w1s4.push_back(points.at(39));
-	w1s4.push_back(points.at(37));
-	w1s4.push_back(points.at(1));
-	w1s4.push_back(points.at(5));
-	wing1.push_back(new RigidSurface(&w1s4, Vector3D(-1, 0, 0)));
-
-	std::vector<Vector3D> w1s5;
-	w1s5.push_back(points.at(3));
-	w1s5.push_back(points.at(39));
-	w1s5.push_back(points.at(5));
-	wing1.push_back(new RigidSurface(&w1s5, Vector3D(1, 0, 0)));
-
-	hulls.push_back(new ConvexHull(&wing1, 1));
-
-	std::vector<RigidSurface*> wing2;
-
-	std::vector<Vector3D> w2s1;
-	w2s1.push_back(points.at(39));
-	w2s1.push_back(points.at(37));
-	w2s1.push_back(points.at(1));
-	w2s1.push_back(points.at(5));
-	wing2.push_back(new RigidSurface(&w2s1, Vector3D(1, 0, 0)));
-
-	std::vector<Vector3D> w2s2;
-	w2s2.push_back(points.at(39));
-	w2s2.push_back(points.at(37));
-	w2s2.push_back(points.at(0));
-	wing2.push_back(new RigidSurface(&w2s2, Vector3D(0, -1, 0)));
-
-	std::vector<Vector3D> w2s3;
-	w2s3.push_back(points.at(5));
-	w2s3.push_back(points.at(39));
-	w2s3.push_back(points.at(7));
-	wing2.push_back(new RigidSurface(&w2s3, Vector3D(1, 0, 0)));
-
-	std::vector<Vector3D> w2s4;
-	w2s4.push_back(points.at(0));
-	w2s4.push_back(points.at(39));
-	w2s4.push_back(points.at(7));
-	wing2.push_back(new RigidSurface(&w2s4, Vector3D(0, -1, 0)));
-
-	std::vector<Vector3D> w2s5;
-	w2s5.push_back(points.at(37));
-	w2s5.push_back(points.at(1));
-	w2s5.push_back(points.at(0));
-	wing2.push_back(new RigidSurface(&w2s5, Vector3D(-1, 0, 0)));
-
-	std::vector<Vector3D> w2s6;
-	w2s6.push_back(points.at(5));
-	w2s6.push_back(points.at(1));
-	w2s6.push_back(points.at(0));
-	wing2.push_back(new RigidSurface(&w2s6, Vector3D(0, 1, 0)));
-
-	std::vector<Vector3D> w2s7;
-	w2s7.push_back(points.at(0));
-	w2s7.push_back(points.at(5));
-	w2s7.push_back(points.at(7));
-	wing2.push_back(new RigidSurface(&w2s7, Vector3D(0, 1, 0)));
-
-	hulls.push_back(new ConvexHull(&wing2, 1));
-
-	std::vector<RigidSurface*> wing3;
-
-	std::vector<Vector3D> w3s1;
-	w3s1.push_back(points.at(4));
-	w3s1.push_back(points.at(38));
-	w3s1.push_back(points.at(40));
-	wing3.push_back(new RigidSurface(&w3s1, Vector3D(0, -1, 0)));
-
-	std::vector<Vector3D> w3s2;
-	w3s2.push_back(points.at(4));
-	w3s2.push_back(points.at(2));
-	w3s2.push_back(points.at(6));
-	wing3.push_back(new RigidSurface(&w3s2, Vector3D(0, 1, 0)));
-
-	std::vector<Vector3D> w3s3;
-	w3s3.push_back(points.at(4));
-	w3s3.push_back(points.at(2));
-	w3s3.push_back(points.at(38));
-	wing3.push_back(new RigidSurface(&w3s3, Vector3D(0, 0, -1)));
-
-	std::vector<Vector3D> w3s4;
-	w3s4.push_back(points.at(40));
-	w3s4.push_back(points.at(38));
-	w3s4.push_back(points.at(2));
-	w3s4.push_back(points.at(6));
-	wing3.push_back(new RigidSurface(&w3s4, Vector3D(-1, 0, 0)));
-
-	std::vector<Vector3D> w3s5;
-	w3s5.push_back(points.at(4));
-	w3s5.push_back(points.at(40));
-	w3s5.push_back(points.at(6));
-	wing3.push_back(new RigidSurface(&w3s5, Vector3D(1, 0, 0)));
-
-	hulls.push_back(new ConvexHull(&wing3, 1));
-
-	std::vector<RigidSurface*> wing4;
-
-	std::vector<Vector3D> w4s1;
-	w4s1.push_back(points.at(40));
-	w4s1.push_back(points.at(38));
-	w4s1.push_back(points.at(2));
-	w4s1.push_back(points.at(6));
-	wing4.push_back(new RigidSurface(&w4s1, Vector3D(1, 0, 0)));
-
-	std::vector<Vector3D> w4s2;
-	w4s2.push_back(points.at(40));
-	w4s2.push_back(points.at(38));
-	w4s2.push_back(points.at(0));
-	wing4.push_back(new RigidSurface(&w4s2, Vector3D(0, -1, 0)));
-
-	std::vector<Vector3D> w4s3;
-	w4s3.push_back(points.at(6));
-	w4s3.push_back(points.at(40));
-	w4s3.push_back(points.at(8));
-	wing4.push_back(new RigidSurface(&w4s3, Vector3D(1, 0, 0)));
-
-	std::vector<Vector3D> w4s4;
-	w4s4.push_back(points.at(0));
-	w4s4.push_back(points.at(40));
-	w4s4.push_back(points.at(8));
-	wing4.push_back(new RigidSurface(&w4s4, Vector3D(0, -1, 0)));
-
-	std::vector<Vector3D> w4s5;
-	w4s5.push_back(points.at(38));
-	w4s5.push_back(points.at(2));
-	w4s5.push_back(points.at(0));
-	wing4.push_back(new RigidSurface(&w4s5, Vector3D(-1, 0, 0)));
-
-	std::vector<Vector3D> w4s6;
-	w4s6.push_back(points.at(6));
-	w4s6.push_back(points.at(2));
-	w4s6.push_back(points.at(0));
-	wing4.push_back(new RigidSurface(&w4s6, Vector3D(0, 1, 0)));
-
-	std::vector<Vector3D> w4s7;
-	w4s7.push_back(points.at(0));
-	w4s7.push_back(points.at(6));
-	w4s7.push_back(points.at(8));
-	wing4.push_back(new RigidSurface(&w4s7, Vector3D(0, 1, 0)));
-
-	hulls.push_back(new ConvexHull(&wing4, 1));
-
-	std::vector<RigidSurface*> bodyRear;
-
-	std::vector<Vector3D> brs1;
-	brs1.push_back(points.at(30));
-	brs1.push_back(points.at(29));
-	brs1.push_back(points.at(25));
-	brs1.push_back(points.at(26));
-	bodyRear.push_back(new RigidSurface((&brs1), Vector3D(-1, 0, 0)));
-
-	std::vector<Vector3D> brs2;
-	brs2.push_back(points.at(29));
-	brs2.push_back(points.at(30));
-	brs2.push_back(points.at(0));
-	bodyRear.push_back(new RigidSurface((&brs2), Vector3D(-1, 0, 0)));
-
-	std::vector<Vector3D> brs3;
-	brs3.push_back(points.at(30));
-	brs3.push_back(points.at(0));
-	brs3.push_back(points.at(20));
-	brs3.push_back(points.at(8));
-	bodyRear.push_back(new RigidSurface((&brs3), Vector3D(0, -1, 0)));
-
-	std::vector<Vector3D> brs4;
-	brs4.push_back(points.at(29));
-	brs4.push_back(points.at(0));
-	brs4.push_back(points.at(20));
-	brs4.push_back(points.at(7));
-	bodyRear.push_back(new RigidSurface((&brs4), Vector3D(0, -1, 0)));
-
-	std::vector<Vector3D> brs5;
-	brs5.push_back(points.at(25));
-	brs5.push_back(points.at(26));
-	brs5.push_back(points.at(24));
-	brs5.push_back(points.at(23));
-	bodyRear.push_back(new RigidSurface((&brs5), Vector3D(0, 1, 0)));
-
-	std::vector<Vector3D> brs6;
-	brs6.push_back(points.at(23));
-	brs6.push_back(points.at(24));
-	brs6.push_back(points.at(15));
-	bodyRear.push_back(new RigidSurface((&brs6), Vector3D(0, 1, 0)));
-
-	std::vector<Vector3D> brs7;
-	brs7.push_back(points.at(24));
-	brs7.push_back(points.at(15));
-	brs7.push_back(points.at(8));
-	bodyRear.push_back(new RigidSurface((&brs7), Vector3D(0, 1, 0)));
-
-	std::vector<Vector3D> brs8;
-	brs8.push_back(points.at(23));
-	brs8.push_back(points.at(15));
-	brs8.push_back(points.at(7));
-	bodyRear.push_back(new RigidSurface((&brs8), Vector3D(0, 1, 0)));
-
-	std::vector<Vector3D> brs9;
-	brs9.push_back(points.at(7));
-	brs9.push_back(points.at(15));
-	brs9.push_back(points.at(8));
-	brs9.push_back(points.at(20));
-	bodyRear.push_back(new RigidSurface((&brs9), Vector3D(1, 0, 0)));
-
-	std::vector<Vector3D> brs10;
-	brs10.push_back(points.at(30));
-	brs10.push_back(points.at(8));
-	brs10.push_back(points.at(24));
-	brs10.push_back(points.at(26));
-	bodyRear.push_back(new RigidSurface((&brs10), Vector3D(0, 0, -1)));
-
-	std::vector<Vector3D> brs11;
-	brs11.push_back(points.at(29));
-	brs11.push_back(points.at(7));
-	brs11.push_back(points.at(23));
-	brs11.push_back(points.at(25));
-	bodyRear.push_back(new RigidSurface((&brs11), Vector3D(0, 0, 1)));
-
-	hulls.push_back(new ConvexHull(&bodyRear, 1));
-
-	/*std::vector<RigidSurface*> head;
-
-	std::vector<Vector3D> hs1;
-	hs1.push_back(points.at(20));
-	hs1.push_back(points.at(8));
-	hs1.push_back(points.at(18));
-	head.push_back(new RigidSurface(&hs1, Vector3D(0, -1, 0)));
-
-	std::vector<Vector3D> hs2;
-	hs2.push_back(points.at(11));
-	hs2.push_back(points.at(8));
-	hs2.push_back(points.at(18));
-	head.push_back(new RigidSurface(&hs2, Vector3D(0, 0, -1)));
-
-	std::vector<Vector3D> hs3;
-	hs3.push_back(points.at(11));
-	hs3.push_back(points.at(8));
-	hs3.push_back(points.at(15));
-	hs3.push_back(points.at(14));
-	head.push_back(new RigidSurface(&hs3, Vector3D(0, 1, 0)));
-
-	std::vector<Vector3D> hs4;
-	hs4.push_back(points.at(18));
-	hs4.push_back(points.at(11));
-	hs4.push_back(points.at(9));
-	hs4.push_back(points.at(16));
-	head.push_back(new RigidSurface(&hs4, Vector3D(0, -1, 0)));
-
-	std::vector<Vector3D> hs5;
-	hs5.push_back(points.at(11));
-	hs5.push_back(points.at(9));
-	hs5.push_back(points.at(14));
-	head.push_back(new RigidSurface(&hs5, Vector3D(0, 0, -1)));
-
-	std::vector<Vector3D> hs6;
-	hs6.push_back(points.at(20));
-	hs6.push_back(points.at(19));
-	hs6.push_back(points.at(18));
-	head.push_back(new RigidSurface(&hs6, Vector3D(0, 0, -1)));
-
-	std::vector<Vector3D> hs7;
-	hs7.push_back(points.at(19));
-	hs7.push_back(points.at(18));
-	hs7.push_back(points.at(16));
-	head.push_back(new RigidSurface(&hs7, Vector3D(0, 0, 0)));
-
-	//////
-
-	std::vector<Vector3D> hs8;
-	hs8.push_back(points.at(20));
-	hs8.push_back(points.at(7));
-	hs8.push_back(points.at(17));
-	head.push_back(new RigidSurface(&hs8, Vector3D(0, 0, 1)));
-
-	std::vector<Vector3D> hs9;
-	hs9.push_back(points.at(10));
-	hs9.push_back(points.at(7));
-	hs9.push_back(points.at(17));
-	head.push_back(new RigidSurface(&hs9, Vector3D(0, 0, 1)));
-
-	std::vector<Vector3D> hs10;
-	hs10.push_back(points.at(17));
-	hs10.push_back(points.at(10));
-	hs10.push_back(points.at(9));
-	hs10.push_back(points.at(16));
-	head.push_back(new RigidSurface(&hs10, Vector3D(0, 0, 1)));
-
-	std::vector<Vector3D> hs11;
-	hs11.push_back(points.at(10));
-	hs11.push_back(points.at(9));
-	hs11.push_back(points.at(14));
-	head.push_back(new RigidSurface(&hs11, Vector3D(0, 0, 1)));
-
-	std::vector<Vector3D> hs12;
-	hs12.push_back(points.at(10));
-	hs12.push_back(points.at(14));
-	hs12.push_back(points.at(15));
-	hs12.push_back(points.at(7));
-	head.push_back(new RigidSurface(&hs12, Vector3D(0, 0, 1)));
-
-	std::vector<Vector3D> hs13;
-	hs13.push_back(points.at(20));
-	hs13.push_back(points.at(19));
-	hs13.push_back(points.at(17));
-	head.push_back(new RigidSurface(&hs13, Vector3D(0, 0, 1)));
-
-	std::vector<Vector3D> hs14;
-	hs14.push_back(points.at(19));
-	hs14.push_back(points.at(17));
-	hs14.push_back(points.at(16));
-	head.push_back(new RigidSurface(&hs14, Vector3D(0, 0, 1)));
-
-	std::vector<Vector3D> hs15;
-	hs15.push_back(points.at(8));
-	hs15.push_back(points.at(15));
-	hs15.push_back(points.at(7));
-	hs15.push_back(points.at(20));
-	head.push_back(new RigidSurface(&hs15, Vector3D(-1, 0, 0)));
-
-	hulls.push_back(new ConvexHull(&head, 1));*/
-
-	body = new RigidBody(hulls, 1, 1, 0.3, false);
-	model = new PolyModel(&polygons, body->getCenterOfMass());
+	Ore* highlightedOre = getOreToGrab(g);
+	if (highlightedOre != nullptr) {
+		olc::Pixel oreCol = olc::RED;
+		double zDist = highlightedOre->getPos().sub(getPos()).dotProduct(getDir());
+		double r = highlightedOre->getRigidBody()->getCollisionRadius() * 1.1 * FOV / zDist;
+		Vector3D orePos = g->getPixelCoord(highlightedOre->getPos(), camPos, camOrient, FOV);
+		g->DrawCircle(orePos.x, orePos.y, r, oreCol);
+
+		Ore::Material material = highlightedOre->getMaterial();
+		sprintf_s(buff, "%s\n\n$%d", Ore::getAbbrev(material), (int) Ore::getValue(material));
+		g->DrawString(orePos.x  + r, orePos.y - r, buff, oreCol, 2);
+	}
+
+	Asteroid* asteroid = getTargetedAsteroid(g);
+	if (asteroid != nullptr) {
+		olc::Pixel astCol = olc::WHITE;
+		double zDist = asteroid->getPos().sub(getPos()).dotProduct(getDir());
+		double r = asteroid->getRigidBody()->getCollisionRadius() * 1.25 * FOV / zDist;
+		Vector3D astPos = g->getPixelCoord(asteroid->getPos(), camPos, camOrient, FOV);
+
+		g->DrawLine(astPos.x - r, astPos.y - r, astPos.x - r + r / 8, astPos.y - r, astCol);
+		g->DrawLine(astPos.x - r, astPos.y - r, astPos.x - r, astPos.y - r + r/8, astCol);
+		g->DrawLine(astPos.x + r, astPos.y - r, astPos.x + r - r / 8, astPos.y - r, astCol);
+		g->DrawLine(astPos.x + r, astPos.y - r, astPos.x + r, astPos.y - r + r / 8, astCol);
+		g->DrawLine(astPos.x + r, astPos.y + r, astPos.x + r - r / 8, astPos.y + r, astCol);
+		g->DrawLine(astPos.x + r, astPos.y + r, astPos.x + r, astPos.y + r - r / 8, astCol);
+		g->DrawLine(astPos.x - r, astPos.y + r, astPos.x - r + r / 8, astPos.y + r, astCol);
+		g->DrawLine(astPos.x - r, astPos.y + r, astPos.x - r, astPos.y + r - r / 8, astCol);
+
+		double dist = getKMToP(asteroid->getPos());
+		sprintf_s(buff, "%.2f KM", dist);
+		g->DrawString(astPos.x - 3 * 8, astPos.y - r - 10, buff, astCol, 1);
+		sprintf_s(buff, "%d / %d", (int) asteroid->getHp(), (int) asteroid->getMaxHp());
+		g->DrawString(astPos.x - strlen(buff) * 8 / 2, astPos.y + r + 2, buff, astCol, 1);
+	}
+
+	Rotor rDir(Vector3D(0, 1, 0), 3.14159 / 2.0);
+	Rotor inv = body->getOrientation().getInverse();
+
+	double width = radarSize * 0.12 / radarRange;
+	double length = radarSize * 0.2 / radarRange;
+	std::vector<Vector3D> radarTri;
+	radarTri.push_back(Vector3D(-length / 2.0, 0, width / 2.0));
+	radarTri.push_back(Vector3D(-length / 2.0, 0, -width / 2.0));
+	radarTri.push_back(Vector3D(length / 2.0, 0, 0));
+	radarTri.push_back(Vector3D(length, 0, 0));
+
+	std::vector<Vector3D> points = radarTri;
+	for (int i = 0; i < points.size(); i++) {
+		points[i] = radarPos.add(points[i]);
+	}
+	Polygon3D p1 = Polygon3D(points.at(0), points.at(1), points.at(2), olc::BLUE, olc::DARK_BLUE);
+	g->drawPolygon(p1, Vector3D(), rDir, FOV, true);
+	g->draw3DLine(radarPos, points.at(3), Vector3D(), rDir, FOV, olc::BLUE);
+
+	for (Vector3D p : radarPoints) {
+		g->draw3DPoint(inv.rotate(p.sub(radarPos)).add(radarPos), Vector3D(), rDir, FOV, color);
+	}
+	for (Enemy* e : *g->getEnemies()) {
+		Vector3D toE = e->getPos().sub(getPos());
+		double dist = toE.getMagnitude();
+		if (dist / KM_CONST <= radarRange) {
+			
+			Vector3D eRadarPos = radarPos.add(inv.rotate(toE.multiply(radarSize / (KM_CONST * radarRange))));
+			Rotor enemyRelOrient = e->getRigidBody()->getOrientation().applyRotor(inv);
+			std::vector<Vector3D> points = radarTri;
+
+			for (int i = 0; i < points.size(); i++) {
+				points[i] = eRadarPos.add(enemyRelOrient.rotate(points[i]));
+			}
+			Polygon3D p1 = Polygon3D(points.at(0), points.at(1), points.at(2), olc::RED, olc::DARK_RED);
+			Polygon3D p2 = Polygon3D(points.at(2), points.at(1), points.at(0), olc::RED, olc::DARK_RED);
+			
+			g->drawPolygon(p1, Vector3D(), rDir, FOV, true);
+			g->drawPolygon(p2, Vector3D(), rDir, FOV, true);
+			g->draw3DLine(eRadarPos, points.at(3), Vector3D(), rDir, FOV, olc::RED);
+		}
+	}
+}
+
+int* Player::getInventory() {
+	return inventory;
 }

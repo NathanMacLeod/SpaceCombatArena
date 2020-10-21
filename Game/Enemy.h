@@ -10,10 +10,11 @@ private:
 	CooldownTimer shootTimer = CooldownTimer(0.4);
 	CooldownTimer missileTimer = CooldownTimer(25);
 
-	void createStructure();
+	Vector3D smokePoint;
 	double bulletVel = 3250;
 	double fireCone = cos(3.14159 / 7);
 	bool damping = true;
+	double size = 35;
 
 public:
 	~Enemy() {}

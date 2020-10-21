@@ -8,8 +8,6 @@ private:
 	CooldownTimer life = CooldownTimer(10);
 	bool playerMissile;
 	Vector3D targetPrevVel;
-	double thrust;
-	double turn;
 	double maxAngle = cos(3.14159 / 2.0);
 	PhysicsObject* target;
 	uint16_t targetID;

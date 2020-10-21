@@ -33,7 +33,7 @@ private:
 	}
 
 	void drawLine3D(double x1, double y1, double x2, double y2, double fov, Vector3D p1Pre, Vector3D p2Pre, olc::Pixel color) {
-		double weight = -0.5; //help draw lines over z buffer from the faces
+		double weight = -0.3; //help draw lines over z buffer from the faces
 
 		int absChangeX = abs(x2 - x1);
 		int absChangeY = abs(y2 - y1);
@@ -454,6 +454,19 @@ public:
 		projectPoint(&minZ, fov);
 
 		drawLine3D(maxZ.x, maxZ.y, minZ.x, minZ.y, fov, maxZPre, minZPre, color);
+	}
+
+	Vector3D getPixelCoord(Vector3D p, const Vector3D cameraPosition, Rotor cameraDir, float fov) {
+		Vector3D cameraPositionToOrigin(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z);
+
+		transformation3D::translatePoint(&p, cameraPositionToOrigin);
+
+		Rotor rotate = cameraDir.getInverse();
+		p = rotate.rotate(p);
+
+		projectPoint(&p, fov);
+
+		return Vector3D(p.x, p.y, 0);
 	}
 
 	void draw3DPoint(Vector3D p, const Vector3D cameraPosition, Rotor cameraDir, float fov, olc::Pixel color, bool skipZ=false) {

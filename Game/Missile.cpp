@@ -10,10 +10,11 @@ Missile::Missile(Vector3D pos, Rotor orientation, Vector3D vel, PhysicsObject* t
 	olc::Pixel highlight;
 
 	if (playerMissile) {
-		angularDampFactor = 20.0;
-		linearDampFactor = 10;
-		thrust = 4000;
-		turn = 20;
+		angularDampFactor = 25.0;
+		linearDampFactor = 15;
+		forwardThrust = 4000;
+		pitchRate = 35;
+		yawRate = 35;
 
 		lineColor = olc::BLACK;
 		color = olc::DARK_RED;
@@ -23,8 +24,9 @@ Missile::Missile(Vector3D pos, Rotor orientation, Vector3D vel, PhysicsObject* t
 	else {
 		angularDampFactor = 12.0;
 		linearDampFactor = 3;
-		thrust = 2000;
-		turn = 12;
+		forwardThrust = 2000;
+		pitchRate = 12;
+		yawRate = 12;
 
 		lineColor = olc::BLACK;
 		color = olc::DARK_MAGENTA;
@@ -199,17 +201,17 @@ void Missile::aimAtTarget(float fElapsedTime) {
 	Vector3D yawDir = body->getOrientation().rotate(Vector3D(0, 0, -1));
 	
 	if (targetRel.dotProduct(yawDir) > 0) {
-		yaw(-turn, fElapsedTime);
+		yaw(-1, fElapsedTime);
 	}
 	else {
-		yaw(turn, fElapsedTime);
+		yaw(1, fElapsedTime);
 	}
 
 	if (targetRel.dotProduct(pitchDir) > 0) {
-		pitch(-turn, fElapsedTime);
+		pitch(-1, fElapsedTime);
 	}
 	else {
-		pitch(turn, fElapsedTime);
+		pitch(1, fElapsedTime);
 	}
 	
 }
@@ -233,7 +235,7 @@ void Missile::update(SpaceMinerGame* game, float fElapsedTime) {
 
 	liveTime += fElapsedTime;
 	dampenMotion(fElapsedTime);
-	aimAtTarget(fElapsedTime);
+	
 
 
 	if (target == nullptr) {
@@ -242,6 +244,8 @@ void Missile::update(SpaceMinerGame* game, float fElapsedTime) {
 	else if (!game->getPhysicsEngine()->bodyInUse(targetID)) {
 		target = nullptr;
 	}
+
+	aimAtTarget(fElapsedTime);
 
 	std::vector<CollisionInfo>* colls = body->getCollHistory();
 	if (colls->size() > 0) {
@@ -267,7 +271,7 @@ void Missile::update(SpaceMinerGame* game, float fElapsedTime) {
 		return;
 	}
 
-	accelForward(thrust, fElapsedTime);
+	accelForward(1, fElapsedTime);
 	if (playerMissile) {
 		Particle::generateExplosion(game, getPos(), 0.7, 50, 3, olc::RED);
 		Particle::generateExplosion(game, getPos(), 0.9, 100, 1, olc::YELLOW);

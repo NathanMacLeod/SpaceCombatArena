@@ -21,7 +21,7 @@ private:
 		PhysicsObject* body;
 		PhysicsObject* gun;
 		static double size;
-	private:
+	public: //TODO REMAKE PRIVATE
 		
 		uint16_t targetID;
 		Vector3D prevTargetVel;
@@ -30,7 +30,7 @@ private:
 		void aimAndShoot(SpaceMinerGame* game, float fElapsedTime);
 		bool inRange(MovingObject* o);
 
-		CooldownTimer fireRate = CooldownTimer(0.035);
+		CooldownTimer fireRate = CooldownTimer(0.125);
 		MovingObject* target;
 		double maxRange = 20000;
 		double maxPitch = 3.14159 * 0.8 / 2.0;

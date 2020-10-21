@@ -166,7 +166,7 @@ void Asteroid::performDeathActions(SpaceMinerGame* game) {
 	int nOre = std::max<int>(2, 30 * size * sqrt(size) / (MIN_SIZE * MIN_SIZE));
 
 	for (int i = 0; i < nOre; i++) {
-		double speed = 450 * (float)rand() / RAND_MAX;
+		double speed = 750 * (float)rand() / RAND_MAX;
 		Vector3D dir = Vector3D(0.5 - (float)rand() / RAND_MAX, 0.5 - (float)rand() / RAND_MAX, 0.5 - (float)rand() / RAND_MAX).getUnitVector();
 		Vector3D vel = dir.multiply(speed);
 		Vector3D displacment = dir.multiply(size * (0.25 + 0.35 * (float)rand() / RAND_MAX));

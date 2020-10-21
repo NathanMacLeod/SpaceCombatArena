@@ -71,7 +71,7 @@ bool SpaceMinerGame::OnUserCreate() {
 
 	station = new SpaceStation(this, Vector3D(0, 0, 0));
 
-	player = new Player(Vector3D(200, 0, 0), Player::Default);
+	player = new Player(Vector3D(200, 0, 0), Player::Twin);
 	pEngine.addRigidBody(player->getRigidBody());
 
 
@@ -128,55 +128,92 @@ bool SpaceMinerGame::OnUserCreate() {
 	pEngine.setGravity(Vector3D(0, 0, 0));
 	pEngine.setOctree(true, Vector3D(0, 0, 0), worldSize * 2, 300);
 
+
+	RAWINPUTDEVICE* devices = new RAWINPUTDEVICE[1];
+	devices[0] = RAWINPUTDEVICE();
+	devices[0].usUsagePage = 0x05;//game controls
+	devices[0].usUsage = 0x02; //generic mouse
+	devices[0].hwndTarget = NULL;
+
+	RegisterRawInputDevices(devices, 1, sizeof(devices[0]));
+
 	return true;
 }
 
 void SpaceMinerGame::readInput(float fElapsedTime) {
-	POINT mouseOld;
+	
+	int mouseX = GetMouseX();
+	int mouseY = GetMouseY();
 
-	POINT mouseNew;
-	GetCursorPos(&mouseNew);
+	float mouseSens = 1;
+	//float movX = (float) mouseX / mouseSens;
+	float movX = (mouseX - ScreenWidth() / 2.0) / (0.33 * ScreenWidth() / 2.0);
+	if (abs(movX) > 1) {
+		movX = (movX > 0) ? 1 : -1;
+	}
+	//float movY = (float)mouseY / mouseSens;
+	float movY = (mouseY - ScreenHeight() / 2.0) / (0.33 * ScreenWidth() / 2.0);
+	if (abs(movY) > 1) {
+		movY = (movY > 0) ? 1 : -1;
+	}
 
-	printf("%d, %d\n", mouseNew, mouseNew);
+	if (movY != 0) {
+		player->pitch(-movY, fElapsedTime);
+	}
+	if (movX != 0) {
+		player->yaw(-movX, fElapsedTime);
+	}
 
 	if (GetKey(olc::Key::W).bHeld) {
-		player->accelForward(650, fElapsedTime);
+		player->accelForward(1, fElapsedTime);
 	}
 	if (GetKey(olc::Key::S).bHeld) {
-		player->accelForward(-650, fElapsedTime);
+		player->accelForward(-1, fElapsedTime);
 	}
 	if (GetKey(olc::Key::A).bHeld) {
-		player->accelDrift(-650, fElapsedTime);
+		player->accelDrift(-1, fElapsedTime);
 	}
 	if (GetKey(olc::Key::D).bHeld) {
-		player->accelDrift(650, fElapsedTime);
+		player->accelDrift(1, fElapsedTime);
 	}
 	if (GetKey(olc::Key::SPACE).bHeld) {
 		player->shoot(this);
 	}
 	if (GetKey(olc::Key::CTRL).bHeld) {
-		player->accelLift(-650, fElapsedTime);
+		player->accelLift(-1, fElapsedTime);
+	}
+	if (GetKey(olc::Key::SHIFT).bHeld) {
+		player->accelLift(1, fElapsedTime);
 	}
 	if (GetKey(olc::Key::UP).bHeld) {
-		player->pitch(3, fElapsedTime);
+		player->pitch(1, fElapsedTime);
 	}
 	if (GetKey(olc::Key::LEFT).bHeld) {
-		player->yaw(3, fElapsedTime);
+		player->yaw(1, fElapsedTime);
 	}
 	if (GetKey(olc::Key::DOWN).bHeld) {
-		player->pitch(-3, fElapsedTime);
+		player->pitch(-1, fElapsedTime);
 	}
 	if (GetKey(olc::Key::RIGHT).bHeld) {
-		player->yaw(-3, fElapsedTime);
+		player->yaw(-1, fElapsedTime);
 	}
 	if (GetKey(olc::Key::Q).bHeld) {
-		player->roll(-3, fElapsedTime);
+		player->roll(-1, fElapsedTime);
 	}
 	if (GetKey(olc::Key::E).bHeld) {
-		player->roll(3, fElapsedTime);
+		player->roll(1, fElapsedTime);
 	}
-	if (GetKey(olc::Key::R).bPressed) {
-		player->fireRocket(this);
+	if (GetKey(olc::Key::F).bPressed) {
+		player->pickUpOre(this);
+	}
+	if (GetMouse(0).bPressed) {
+		player->selectTarget(this);
+	}
+	if (GetKey(olc::Key::K1).bPressed) {
+		player->setEquippedTool(Player::Guns);
+	}
+	if(GetKey(olc::Key::K2).bPressed) {
+		player->setEquippedTool(Player::Missiles);
 	}
 }
 
@@ -195,6 +232,9 @@ void SpaceMinerGame::gameUpdate(float fElapsedTime) {
 	}
 	for (Enemy* e : enemies) {
 		e->update(this, fElapsedTime);
+	}
+	for (Ore* o : ores) {
+		o->update(this, fElapsedTime);
 	}
 
 	for (int i = 0; i < projectiles.size(); i++) {
@@ -239,6 +279,17 @@ void SpaceMinerGame::gameUpdate(float fElapsedTime) {
 			a = nullptr;
 		}
 	}
+
+	for (int i = 0; i < ores.size(); i++) {
+		Ore* o = ores.at(i);
+		if (o->isExpired()) {
+			o->performDeathActions(this);
+			ores.erase(ores.begin() + i);
+			i--;
+			delete o;
+			o = nullptr;
+		}
+	}
 }
 
 void SpaceMinerGame::gameRender() {
@@ -247,8 +298,7 @@ void SpaceMinerGame::gameRender() {
 	clearZBuffer();
 	Clear(olc::BLACK);
 
-	cameraOrientation = Rotor(Vector3D(0, 1, 0), 3.14159 / 2.0).applyRotor(player->getRigidBody()->getOrientation());
-	cameraPos = cameraOrientation.rotate(Vector3D(0, 0, 65)).add(player->getRigidBody()->getCenterOfMass());
+	player->getCameraPosOrient(&cameraPos, &cameraOrientation);
 	//cameraPos = test->body->getCenterOfMass();
 
 	player->draw(this, cameraPos, cameraOrientation, fv);
@@ -300,6 +350,18 @@ void SpaceMinerGame::gameRender() {
 			}
 		}
 	}
+	clearZBuffer();
+	player->drawPlayerUI(this, fv);
+	//test.draw(this);
+
+	int sum = 0;
+	int* inventory = player->getInventory();
+	for (int i = 0; i < Ore::N_TYPES; i++) {
+		sum += inventory[i] * Ore::getValue((Ore::Material) i);
+	}
+	char string[50];
+	sprintf_s(string, "$%d", sum);
+	DrawString(10, 10, string, olc::CYAN, 2);
 }
 
 bool SpaceMinerGame::OnUserUpdate(float fElapsedTime) {
@@ -307,7 +369,8 @@ bool SpaceMinerGame::OnUserUpdate(float fElapsedTime) {
 	static int i = 0;
 	dropTime += fElapsedTime;
 
-	if (dropTime > 15 && i++ < 300) {
+	if (dropTime > 0.1 && i < 300 && enemies.size() < 1) {
+		i++;
 		dropTime = 0;
 		double x = 5;// 52;s
 		double y = -70;
@@ -350,6 +413,10 @@ void SpaceMinerGame::removeExpired(std::vector<Expireable*>* expireables) {
 
 PhysicsEngine* SpaceMinerGame::getPhysicsEngine() {
 	return &pEngine;
+}
+
+std::vector<Ore*>* SpaceMinerGame::getOre() {
+	return &ores;
 }
 
 std::vector<Asteroid*>* SpaceMinerGame::getAsteroids() {

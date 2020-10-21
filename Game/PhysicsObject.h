@@ -19,5 +19,6 @@ public:
 	Vector3D getDir();
 	Vector3D getPos();
 	RigidBody* getRigidBody();
+	PolyModel* getModel();
 	static void createSurfacesFromPolygons(std::vector<Polygon3D>* polygons, std::vector<RigidSurface*>* out);
 };

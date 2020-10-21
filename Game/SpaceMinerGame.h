@@ -10,6 +10,7 @@
 #include "Ore.h"
 #include "SpaceStation.h"
 #include "Projectile.h"
+#include "ShopMenu.h"
 
 class SpaceMinerGame : public PixelEngine3D {
 private:
@@ -21,13 +22,14 @@ private:
 
 	std::vector<PhysicsObject*> stuff;
 
-	PhysicsEngine pEngine = PhysicsEngine(0.015);
+	PhysicsEngine pEngine = PhysicsEngine(0.01667);
 	Vector3D cameraPos;
 	Rotor cameraOrientation;
 
 	std::vector<Drawable*> walls; //temporary
 
 	Player* player;
+	ShopMenu test;
 	SpaceStation* station;
 
 	void update(std::vector<Updatable*>* updatables, float fElapsedTime);
@@ -41,6 +43,7 @@ public:
 	PhysicsEngine* getPhysicsEngine();
 	std::vector<Enemy*>* getEnemies();
 	std::vector<Asteroid*>* getAsteroids();
+	std::vector<Ore*>* getOre();
 	Player* getPlayer();
 	void addOre(Ore* ore);
 	void addEnemy(Enemy* enemy);

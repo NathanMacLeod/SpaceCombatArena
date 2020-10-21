@@ -9,6 +9,12 @@ public:
 	virtual ~Damageable();
 
 	virtual void damage(double damage);
+	double getHp() {
+		return hp;
+	}
+	double getMaxHp() {
+		return maxHp;
+	}
 
 	virtual bool isExpired();
 };

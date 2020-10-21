@@ -11,6 +11,14 @@ public:
 		totalTime = time;
 	}
 
+	float getTimerTime() {
+		return totalTime;
+	}
+
+	float getTime() {
+		return currTime;
+	}
+
 	void updateTimer(float fElapsedTime) {
 		currTime -= fElapsedTime;
 	}

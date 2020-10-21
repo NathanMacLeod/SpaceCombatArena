@@ -267,7 +267,7 @@ Vector3D RigidBody::gyroAccel(double time) {
 	Vector3D wB = orientation.getInverse().rotate(angularVelocity);
 	Vector3D w2B = wB;
 
-	int nItr = 1;
+	int nItr = 3;
 	for (int i = 0; i < nItr; i++) {
 		Vector3D funcW = (inertiaTensor * w2B.sub(wB)).add(w2B.crossProduct(inertiaTensor * w2B).multiply(time));
 		Matrix33 jacobian = inertiaTensor + (((Matrix33::skew(w2B) * inertiaTensor) + (Matrix33::skew(inertiaTensor * w2B) * -1)) * time);
@@ -275,6 +275,10 @@ Vector3D RigidBody::gyroAccel(double time) {
 	}
 
 	return orientation.rotate(w2B);
+}
+
+std::vector<Vector3D>* RigidBody::getAllPoints() {
+	return &pointsOG;
 }
 
 void RigidBody::moveInTime(double time) {

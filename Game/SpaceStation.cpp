@@ -32,6 +32,11 @@ void SpaceStation::draw(PixelEngine3D* g, Vector3D cameraPos, Rotor cameraDir, d
 	turret1->gun->draw(g, cameraPos, cameraDir, FOV);
 	turret2->body->draw(g, cameraPos, cameraDir, FOV);
 	turret2->gun->draw(g, cameraPos, cameraDir, FOV);
+
+	if (turret1->target != nullptr) {
+		Vector3D leadTarget = Projectile::calculateLeadPoint(turret1->gun->getPos(), turret1->target->getPos(), Vector3D(0, 0, 0), turret1->target->getRigidBody()->getVelocity(), turret1->bulletVel);
+		//g->draw3DPoint(leadTarget, cameraPos, cameraDir, FOV, olc::RED);
+	}
 }
 
 SpaceStation::Turret::Turret(PhysicsObject* body, PhysicsObject* gun, Vector3D upDir) {

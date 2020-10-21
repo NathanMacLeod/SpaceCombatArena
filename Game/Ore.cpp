@@ -3,7 +3,7 @@
 #include "Asteroid.h"
 
 
-Ore::Ore(Vector3D pos, Material type) {
+Ore::Ore(Vector3D pos, Material type, MovingObject::DebrisType debrisType) {
 	double density = 1;
 	double roughness = 0.2;
 	double detail = 2;
@@ -55,8 +55,17 @@ Ore::Ore(Vector3D pos, Material type) {
 		color = olc::DARK_MAGENTA;
 		break;
 	}
+	if (type != NormalDebris && type != EliteDebris) {
+		Asteroid::createRockMesh(pos, size, detail, density, roughness, lineColor, color, &body, &model);
+	}
+	else {
+		MovingObject::getShipDebris(debrisType, 35, olc::VERY_DARK_MAGENTA, olc::BLACK,
+			olc::VERY_DARK_MAGENTA, olc::BLACK, olc::DARK_GREEN, olc::VERY_DARK_GREEN, &body, &model);
+		body->translate(pos);
+	}
 
-	Asteroid::createRockMesh(pos, size, detail , density, roughness, lineColor, color, &body, &model);
+	life.reset();
+	pickedUp = false();
 }
 
 Ore::Material Ore::pickTypeRandomly() {
@@ -69,6 +78,8 @@ Ore::Material Ore::pickTypeRandomly() {
 		2, //plutonium
 		0.6, //cybernium
 		0.35, //anthium
+		0, //normal debris
+		0, //elite debris
 	};
 
 	static float total = -1;
@@ -77,7 +88,6 @@ Ore::Material Ore::pickTypeRandomly() {
 		for (int i = 0; i < N_TYPES; i++) {
 			total += probVals[i];
 		}
-		printf("total: %f\n", total);
 	}
 
 	int chosenVal = 1 + (fmod(rand(), total));
@@ -92,22 +102,91 @@ Ore::Material Ore::pickTypeRandomly() {
 	return Iron;
 }
 
-double Ore::getValue() {
+Ore::Material Ore::getMaterial() {
+	return material;
+}
+
+olc::Pixel Ore::getColor(Material m) {
+	switch (m) {
+	case Iron:
+		return olc::VERY_DARK_GREY;
+	case Copper:
+		return olc::Pixel(122, 45, 20);
+	case Silver:
+		return olc::GREY;
+	case Gold:
+		return olc::YELLOW;
+	case Plutonium:
+		return olc::GREEN;
+	case Cybernium:
+		return olc::DARK_CYAN;
+	case Anthium:
+		return olc::DARK_MAGENTA;
+	case NormalDebris:
+		return olc::VERY_DARK_MAGENTA;
+	}
+}
+
+std::string Ore::getName(Material m) {
+	switch (m) {
+	case Iron:
+		return std::string("Iron");
+	case Copper:
+		return std::string("Copper");
+	case Silver:
+		return std::string("Silver");
+	case Gold:
+		return std::string("Gold");
+	case Plutonium:
+		return std::string("Plutonium");
+	case Cybernium:
+		return std::string("Cybernium");
+	case Anthium:
+		return std::string("Anthium");
+	case NormalDebris:
+		return std::string("Debris");
+	}
+}
+
+std::string Ore::getAbbrev(Material m) {
+	switch (m) {
+	case Iron:
+		return std::string("Fe");
+	case Copper:
+		return std::string("Cu");
+	case Silver:
+		return std::string("Ag");
+	case Gold:
+		return std::string("Au");
+	case Plutonium:
+		return std::string("Pu");
+	case Cybernium:
+		return std::string("Cb");
+	case Anthium:
+		return std::string("An");
+	case NormalDebris:
+		return std::string("Debris");
+	}
+}
+
+double Ore::getValue(Material material) {
 	switch (material) {
 	case Iron:
-		return 1;
+		return 100;
 	case Copper:
-		return 2;
+		return 200;
 	case Silver:
-		return 10;
+		return 1000;
 	case Gold:
-		return 25;
+		return 2500;
 	case Plutonium:
-		return 50;
+		return 5000;
 	case Cybernium:
-		return 150;
+		return 15000;
 	case Anthium:
-		return 500;
+		return 50000;
+	case NormalDebris:
+		return 3500;
 	}
 }
 
@@ -123,4 +202,24 @@ void Ore::dampen(float fElapsedTime) {
 
 void Ore::update(SpaceMinerGame* game, float fElapsedTime) {
 	dampen(fElapsedTime);
+	life.updateTimer(fElapsedTime);
+	if (material == NormalDebris || material == EliteDebris) {
+		float lifeF = std::fmaxf(1, (life.getTimerTime() - life.getTime()) / 2.0);
+		Vector3D originVar = Vector3D((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX).multiply(0.75 * 35);
+		Particle::generateExplosion(game, getPos().add(originVar), 0.7, 50, 3 / lifeF, olc::RED);
+		Particle::generateExplosion(game, getPos().add(originVar), 0.9, 100, 1 / lifeF, olc::GREEN);
+		Particle::generateExplosion(game, getPos().add(originVar), 4.5, 250, 3 / lifeF, olc::DARK_GREY);
+	}
 }
+
+void Ore::pickUp() {
+	pickedUp = true;
+}
+
+bool Ore::isExpired() {
+	return pickedUp || life.isReady();
+}
+
+//void Ore::draw(PixelEngine3D* g, Vector3D cameraPos, Rotor cameraDir, double FOV) {
+//	debugDraw(g, cameraPos, cameraDir, FOV);
+//}
