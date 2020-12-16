@@ -9,9 +9,10 @@ private:
 	bool collided = false;
 	olc::Pixel color;
 	olc::Pixel lineColor;
+	bool playerBullet;
 public:
 	void performDeathActions(SpaceMinerGame* game);
-	Bullet(Vector3D position, Rotor dir, Vector3D velocity, double density, uint16_t sourceID, olc::Pixel lineColor, olc::Pixel color, double lifeTime = 2.0);
+	Bullet(Vector3D position, Rotor dir, Vector3D velocity, double density, uint16_t sourceID, olc::Pixel lineColor, olc::Pixel color, bool playerBullet, double lifeTime = 2.0);
 	~Bullet();
 	void update(SpaceMinerGame* game, float fElapsedTime);
 	bool isExpired();

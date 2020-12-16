@@ -55,12 +55,24 @@ Ore::Ore(Vector3D pos, Material type, MovingObject::DebrisType debrisType) {
 		color = olc::DARK_MAGENTA;
 		break;
 	}
-	if (type != NormalDebris && type != EliteDebris) {
+	if (type != NormalDebris && type != EliteDebris && type != PlayerDebris) {
 		Asteroid::createRockMesh(pos, size, detail, density, roughness, lineColor, color, &body, &model);
 	}
 	else {
-		MovingObject::getShipDebris(debrisType, 35, olc::VERY_DARK_MAGENTA, olc::BLACK,
-			olc::VERY_DARK_MAGENTA, olc::BLACK, olc::DARK_GREEN, olc::VERY_DARK_GREEN, &body, &model);
+		switch (type) {
+		case NormalDebris:
+			MovingObject::getShipDebris(debrisType, 35, olc::VERY_DARK_MAGENTA, olc::BLACK,
+				olc::VERY_DARK_MAGENTA, olc::BLACK, olc::DARK_GREEN, olc::VERY_DARK_GREEN, &body, &model);
+			break;
+		case EliteDebris:
+			MovingObject::getShipDebris(debrisType, 35, olc::VERY_DARK_MAGENTA, olc::BLACK,
+				olc::DARK_CYAN, olc::BLACK, olc::DARK_GREEN, olc::VERY_DARK_GREEN, &body, &model);
+			break;
+		case PlayerDebris:
+			MovingObject::getShipDebris(debrisType, 35, olc::VERY_DARK_RED, olc::BLACK,
+				olc::VERY_DARK_RED, olc::BLACK, olc::DARK_CYAN, olc::DARK_CYAN, &body, &model);
+		}
+		
 		body->translate(pos);
 	}
 
@@ -80,6 +92,7 @@ Ore::Material Ore::pickTypeRandomly() {
 		0.35, //anthium
 		0, //normal debris
 		0, //elite debris
+		0, //player debris
 	};
 
 	static float total = -1;
@@ -124,6 +137,8 @@ olc::Pixel Ore::getColor(Material m) {
 		return olc::DARK_MAGENTA;
 	case NormalDebris:
 		return olc::VERY_DARK_MAGENTA;
+	case EliteDebris:
+		return olc::VERY_DARK_MAGENTA;
 	}
 }
 
@@ -145,7 +160,10 @@ std::string Ore::getName(Material m) {
 		return std::string("Anthium");
 	case NormalDebris:
 		return std::string("Debris");
+	case EliteDebris:
+		return std::string("Elite Debris");
 	}
+
 }
 
 std::string Ore::getAbbrev(Material m) {
@@ -165,7 +183,9 @@ std::string Ore::getAbbrev(Material m) {
 	case Anthium:
 		return std::string("An");
 	case NormalDebris:
-		return std::string("Debris");
+		return std::string("Db");
+	case EliteDebris:
+		return std::string("Ed");
 	}
 }
 
@@ -186,7 +206,9 @@ double Ore::getValue(Material material) {
 	case Anthium:
 		return 50000;
 	case NormalDebris:
-		return 3500;
+		return 700;
+	case EliteDebris:
+		return 1200;
 	}
 }
 
@@ -203,12 +225,22 @@ void Ore::dampen(float fElapsedTime) {
 void Ore::update(SpaceMinerGame* game, float fElapsedTime) {
 	dampen(fElapsedTime);
 	life.updateTimer(fElapsedTime);
-	if (material == NormalDebris || material == EliteDebris) {
+	if (material == NormalDebris || material == EliteDebris || material == PlayerDebris) {
 		float lifeF = std::fmaxf(1, (life.getTimerTime() - life.getTime()) / 2.0);
 		Vector3D originVar = Vector3D((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX).multiply(0.75 * 35);
-		Particle::generateExplosion(game, getPos().add(originVar), 0.7, 50, 3 / lifeF, olc::RED);
-		Particle::generateExplosion(game, getPos().add(originVar), 0.9, 100, 1 / lifeF, olc::GREEN);
-		Particle::generateExplosion(game, getPos().add(originVar), 4.5, 250, 3 / lifeF, olc::DARK_GREY);
+
+		olc::Pixel c1 = olc::RED;
+		olc::Pixel c2 = olc::GREEN;
+		olc::Pixel c3 = olc::DARK_GREY;
+
+		if (material == PlayerDebris) {
+			c1 = olc::RED;
+			c2 = olc::YELLOW;
+		}
+
+		Particle::generateExplosion(game, getPos().add(originVar), 0.7, 50, 1 / lifeF, c1);
+		Particle::generateExplosion(game, getPos().add(originVar), 0.9, 100, 1 / lifeF, c2);
+		Particle::generateExplosion(game, getPos().add(originVar), 4.5, 250, 1 / lifeF, c3);
 	}
 }
 

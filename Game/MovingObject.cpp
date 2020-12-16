@@ -137,23 +137,23 @@ void MovingObject::createShipMesh(bool playerShip, double size, olc::Pixel color
 
 	olc::Pixel thruster = olc::DARK_RED;
 	olc::Pixel thrusterLine = olc::RED;
-	polygons.push_back(Polygon3D(points.at(0), points.at(8), points.at(20), lineColor, color));
+	polygons.push_back(Polygon3D(points.at(0), points.at(8), points.at(20), lineColor, highlight));
 	polygons.push_back(Polygon3D(points.at(0), points.at(40), points.at(8), lineColor, color));
 	polygons.push_back(Polygon3D(points.at(0), points.at(38), points.at(40), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(40), points.at(38), points.at(4), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(4), points.at(6), points.at(40), lineColor, color));
+	polygons.push_back(Polygon3D(points.at(40), points.at(38), points.at(4), lineColor, highlight));
+	polygons.push_back(Polygon3D(points.at(4), points.at(6), points.at(40), lineColor, highlight));
 	polygons.push_back(Polygon3D(points.at(40), points.at(6), points.at(8), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(38), points.at(2), points.at(4), lineColor, color));
+	polygons.push_back(Polygon3D(points.at(38), points.at(2), points.at(4), lineColor, highlight));
 	polygons.push_back(Polygon3D(points.at(0), points.at(2), points.at(38), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(2), points.at(6), points.at(4), lineColor, color));
+	polygons.push_back(Polygon3D(points.at(2), points.at(6), points.at(4), lineColor, highlight));
 	polygons.push_back(Polygon3D(points.at(6), points.at(2), points.at(0), lineColor, color));
 	polygons.push_back(Polygon3D(points.at(8), points.at(6), points.at(0), lineColor, color));
 	if (!playerShip) {
-		polygons.push_back(Polygon3D(points.at(20), points.at(8), points.at(22), lineColor, color));
-		polygons.push_back(Polygon3D(points.at(20), points.at(22), points.at(11), lineColor, color));
-		polygons.push_back(Polygon3D(points.at(20), points.at(11), points.at(18), lineColor, color));
-		polygons.push_back(Polygon3D(points.at(16), points.at(18), points.at(11), lineColor, color));
-		polygons.push_back(Polygon3D(points.at(11), points.at(9), points.at(16), lineColor, color));
+		polygons.push_back(Polygon3D(points.at(20), points.at(8), points.at(22), lineColor, highlight));
+		polygons.push_back(Polygon3D(points.at(20), points.at(22), points.at(11), lineColor, highlight));
+		polygons.push_back(Polygon3D(points.at(20), points.at(11), points.at(18), lineColor, highlight));
+		polygons.push_back(Polygon3D(points.at(16), points.at(18), points.at(11), lineColor, highlight));
+		polygons.push_back(Polygon3D(points.at(11), points.at(9), points.at(16), lineColor, highlight));
 		polygons.push_back(Polygon3D(points.at(14), points.at(9), points.at(11), lineColor, color));
 		polygons.push_back(Polygon3D(points.at(14), points.at(11), points.at(22), lineColor, color));
 		polygons.push_back(Polygon3D(points.at(14), points.at(22), points.at(13), lineColor, color));
@@ -180,23 +180,23 @@ void MovingObject::createShipMesh(bool playerShip, double size, olc::Pixel color
 
 
 	///////////////////////////////
-	polygons.push_back(Polygon3D(points.at(7), points.at(0), points.at(20), lineColor, color));
+	polygons.push_back(Polygon3D(points.at(7), points.at(0), points.at(20), lineColor, highlight));
 	polygons.push_back(Polygon3D(points.at(39), points.at(0), points.at(7), lineColor, color));
 	polygons.push_back(Polygon3D(points.at(37), points.at(0), points.at(39), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(37), points.at(39), points.at(3), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(3), points.at(39), points.at(5), lineColor, color));
+	polygons.push_back(Polygon3D(points.at(37), points.at(39), points.at(3), lineColor, highlight));
+	polygons.push_back(Polygon3D(points.at(3), points.at(39), points.at(5), lineColor, highlight));
 	polygons.push_back(Polygon3D(points.at(5), points.at(39), points.at(7), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(1), points.at(37), points.at(3), lineColor, color));
+	polygons.push_back(Polygon3D(points.at(1), points.at(37), points.at(3), lineColor, highlight));
 	polygons.push_back(Polygon3D(points.at(1), points.at(0), points.at(37), lineColor, color));
-	polygons.push_back(Polygon3D(points.at(5), points.at(1), points.at(3), lineColor, color));
+	polygons.push_back(Polygon3D(points.at(5), points.at(1), points.at(3), lineColor, highlight));
 	polygons.push_back(Polygon3D(points.at(1), points.at(5), points.at(0), lineColor, color));
 	polygons.push_back(Polygon3D(points.at(5), points.at(7), points.at(0), lineColor, color));
 	if (!playerShip) {
-		polygons.push_back(Polygon3D(points.at(7), points.at(20), points.at(21), lineColor, color));
-		polygons.push_back(Polygon3D(points.at(21), points.at(20), points.at(10), lineColor, color));
-		polygons.push_back(Polygon3D(points.at(10), points.at(20), points.at(17), lineColor, color));
-		polygons.push_back(Polygon3D(points.at(17), points.at(16), points.at(10), lineColor, color));
-		polygons.push_back(Polygon3D(points.at(9), points.at(10), points.at(16), lineColor, color));
+		polygons.push_back(Polygon3D(points.at(7), points.at(20), points.at(21), lineColor, highlight));
+		polygons.push_back(Polygon3D(points.at(21), points.at(20), points.at(10), lineColor, highlight));
+		polygons.push_back(Polygon3D(points.at(10), points.at(20), points.at(17), lineColor, highlight));
+		polygons.push_back(Polygon3D(points.at(17), points.at(16), points.at(10), lineColor, highlight));
+		polygons.push_back(Polygon3D(points.at(9), points.at(10), points.at(16), lineColor, highlight));
 		polygons.push_back(Polygon3D(points.at(9), points.at(14), points.at(10), lineColor, color));
 		polygons.push_back(Polygon3D(points.at(10), points.at(14), points.at(21), lineColor, color));
 		polygons.push_back(Polygon3D(points.at(21), points.at(14), points.at(12), lineColor, color));
@@ -589,15 +589,15 @@ void MovingObject::getShipDebris(DebrisType debrisType, double size, olc::Pixel 
 	switch (debrisType) {
 	case WingDebris:
 	{
-		polygons.push_back(Polygon3D(points.at(7), points.at(0), points.at(20), lineColor, color));
+		//polygons.push_back(Polygon3D(points.at(7), points.at(0), points.at(20), lineColor, highlight));
 		polygons.push_back(Polygon3D(points.at(39), points.at(0), points.at(7), lineColor, color));
 		polygons.push_back(Polygon3D(points.at(37), points.at(0), points.at(39), lineColor, color));
-		polygons.push_back(Polygon3D(points.at(37), points.at(39), points.at(3), lineColor, color));
-		polygons.push_back(Polygon3D(points.at(3), points.at(39), points.at(5), lineColor, color));
+		polygons.push_back(Polygon3D(points.at(37), points.at(39), points.at(3), lineColor, highlight));
+		polygons.push_back(Polygon3D(points.at(3), points.at(39), points.at(5), lineColor, highlight));
 		polygons.push_back(Polygon3D(points.at(5), points.at(39), points.at(7), lineColor, color));
-		polygons.push_back(Polygon3D(points.at(1), points.at(37), points.at(3), lineColor, color));
+		polygons.push_back(Polygon3D(points.at(1), points.at(37), points.at(3), lineColor, highlight));
 		polygons.push_back(Polygon3D(points.at(1), points.at(0), points.at(37), lineColor, color));
-		polygons.push_back(Polygon3D(points.at(5), points.at(1), points.at(3), lineColor, color));
+		polygons.push_back(Polygon3D(points.at(5), points.at(1), points.at(3), lineColor, highlight));
 		polygons.push_back(Polygon3D(points.at(1), points.at(5), points.at(0), lineColor, color));
 		polygons.push_back(Polygon3D(points.at(5), points.at(7), points.at(0), lineColor, color));
 
@@ -687,22 +687,22 @@ void MovingObject::getShipDebris(DebrisType debrisType, double size, olc::Pixel 
 	case HeadDebris:
 	{
 
-		polygons.push_back(Polygon3D(points.at(20), points.at(8), points.at(22), lineColor, color));
-		polygons.push_back(Polygon3D(points.at(20), points.at(22), points.at(11), lineColor, color));
-		polygons.push_back(Polygon3D(points.at(20), points.at(11), points.at(18), lineColor, color));
-		polygons.push_back(Polygon3D(points.at(16), points.at(18), points.at(11), lineColor, color));
-		polygons.push_back(Polygon3D(points.at(11), points.at(9), points.at(16), lineColor, color));
+		polygons.push_back(Polygon3D(points.at(20), points.at(8), points.at(22), lineColor, highlight));
+		polygons.push_back(Polygon3D(points.at(20), points.at(22), points.at(11), lineColor, highlight));
+		polygons.push_back(Polygon3D(points.at(20), points.at(11), points.at(18), lineColor, highlight));
+		polygons.push_back(Polygon3D(points.at(16), points.at(18), points.at(11), lineColor, highlight));
+		polygons.push_back(Polygon3D(points.at(11), points.at(9), points.at(16), lineColor, highlight));
 		polygons.push_back(Polygon3D(points.at(14), points.at(9), points.at(11), lineColor, color));
 		polygons.push_back(Polygon3D(points.at(14), points.at(11), points.at(22), lineColor, color));
 		polygons.push_back(Polygon3D(points.at(14), points.at(22), points.at(8), lineColor, color));
 		polygons.push_back(Polygon3D(points.at(14), points.at(8), points.at(15), lineColor, color));
 		polygons.push_back(Polygon3D(points.at(15), points.at(8), points.at(20), olc::Pixel(20, 7, 7), olc::Pixel(15, 5, 5)));
 
-		polygons.push_back(Polygon3D(points.at(7), points.at(20), points.at(21), lineColor, color));
-		polygons.push_back(Polygon3D(points.at(21), points.at(20), points.at(10), lineColor, color));
-		polygons.push_back(Polygon3D(points.at(10), points.at(20), points.at(17), lineColor, color));
-		polygons.push_back(Polygon3D(points.at(17), points.at(16), points.at(10), lineColor, color));
-		polygons.push_back(Polygon3D(points.at(9), points.at(10), points.at(16), lineColor, color));
+		polygons.push_back(Polygon3D(points.at(7), points.at(20), points.at(21), lineColor, highlight));
+		polygons.push_back(Polygon3D(points.at(21), points.at(20), points.at(10), lineColor, highlight));
+		polygons.push_back(Polygon3D(points.at(10), points.at(20), points.at(17), lineColor, highlight));
+		polygons.push_back(Polygon3D(points.at(17), points.at(16), points.at(10), lineColor, highlight));
+		polygons.push_back(Polygon3D(points.at(9), points.at(10), points.at(16), lineColor, highlight));
 		polygons.push_back(Polygon3D(points.at(9), points.at(14), points.at(10), lineColor, color));
 		polygons.push_back(Polygon3D(points.at(10), points.at(14), points.at(21), lineColor, color));
 		polygons.push_back(Polygon3D(points.at(21), points.at(14), points.at(7), lineColor, color));

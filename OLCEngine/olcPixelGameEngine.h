@@ -2690,7 +2690,6 @@ namespace olc
 			Rid[0].usUsage = HID_USAGE_GENERIC_MOUSE;
 			Rid[0].dwFlags = 0x0;
 			Rid[0].hwndTarget = NULL;
-			printf("%d\n", RegisterRawInputDevices(Rid, 1, sizeof(Rid[0])));
 
 			// Create Keyboard Mapping
 			mapKeys[0x00] = Key::NONE;

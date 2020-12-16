@@ -251,19 +251,26 @@ void Missile::update(SpaceMinerGame* game, float fElapsedTime) {
 	if (colls->size() > 0) {
 		int collID = colls->at(0).otherBodyID;
 
-		for (Enemy* e : *game->getEnemies()) {
-			if (e->getRigidBody()->getID() == collID) {
-				e->damage(100);
-				break;
+		if (playerMissile) {
+			for (Enemy* e : *game->getEnemies()) {
+				if (e->getRigidBody()->getID() == collID) {
+					e->damage(100);
+					break;
+				}
+			}
+		}
+		else {
+			if (game->getPlayer() != nullptr && game->getPlayer()->getRigidBody()->getID() == collID) {
+				game->getPlayer()->damage(20);
 			}
 		}
 
-		for (Asteroid* a : *game->getAsteroids()) {
+		/*for (Asteroid* a : *game->getAsteroids()) {
 			if (a->getRigidBody()->getID() == collID) {
 				a->damage(100);
 				break;
 			}
-		}
+		}*/
 
 		Particle::generateExplosion(game, body->getCenterOfMass(), 0.6, 1250, 300, olc::WHITE);
 		Particle::generateExplosion(game, body->getCenterOfMass(), 0.7, 750, 150, olc::WHITE);

@@ -1,15 +1,15 @@
 #include "Asteroid.h"
 #include "SpaceMinerGame.h"
 
-Asteroid::Asteroid(Vector3D position, double size, int detail) {
+Asteroid::Asteroid(Vector3D position, double size) {
 	this->size = size;
 	maxHp = 30 * 300 * size * sqrt(size) / (MIN_SIZE * MIN_SIZE);
 	hp = maxHp;
-	createRockMesh(position, size, detail, 1, 0.2, olc::WHITE, olc::BLACK, &body, &model);
+	createRockMesh(position, size, 3, 1, 0.2, olc::WHITE, olc::BLACK, &body, &model);
+	unloaded = false;
 }
 
 void Asteroid::createRockMesh(Vector3D pos, double size, double detail, double density, double roughness, olc::Pixel lineColor, olc::Pixel color, RigidBody** bodyOut, PolyModel** meshOut) {
-	//form cube, then 
 
 	Vector3D p1(-1, -1, -1);
 	Vector3D p2(1, -1, -1);
@@ -155,8 +155,15 @@ void Asteroid::generateFace(Vector3D p1, Vector3D p2, Vector3D p3, Vector3D p4, 
 	}
 }
 
-double Asteroid::pickAsteroidSize() {
-	float val = (float)rand() / RAND_MAX;
+void Asteroid::markUnloaded() {
+	unloaded = true;
+}
+
+bool Asteroid::getUnloaded() {
+	return unloaded;
+}
+
+double Asteroid::pickAsteroidSize(float val) {
 	return val * val * val * (MAX_SIZE - MIN_SIZE) + MIN_SIZE;
 }
 

@@ -8,8 +8,8 @@
 
 class Ore : public PhysicsObject, public Updatable, public Expireable{
 public:
-	static enum Material { Iron, Copper, Gold, Silver, Plutonium, Cybernium, Anthium, NormalDebris, EliteDebris };
-	static const int N_TYPES = 9;
+	static enum Material { Iron, Copper, Gold, Silver, Plutonium, Cybernium, Anthium, NormalDebris, EliteDebris, PlayerDebris};
+	static const int N_TYPES = 10;
 
 	Ore(Vector3D pos, Material type, MovingObject::DebrisType debrisType = MovingObject::HeadDebris);
 	static double getValue(Material m);
@@ -25,9 +25,9 @@ public:
 	bool isExpired();
 	//void draw(PixelEngine3D* g, Vector3D cameraPos, Rotor cameraDir, double FOV);
 private:
-	double dampenVal = 0.3;
+	double dampenVal = 0;
 	Material material;
 	void dampen(float fElapsedTime);
 	bool pickedUp;
-	CooldownTimer life = CooldownTimer(120);
+	CooldownTimer life = CooldownTimer(7);
 };

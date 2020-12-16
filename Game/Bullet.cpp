@@ -2,8 +2,9 @@
 #include "Particle.h"
 #include "SpaceMinerGame.h"
 
-Bullet::Bullet(Vector3D position, Rotor dir, Vector3D velocity, double density, uint16_t sourceID, olc::Pixel lineColor, olc::Pixel color, double lifeTime) {
+Bullet::Bullet(Vector3D position, Rotor dir, Vector3D velocity, double density, uint16_t sourceID, olc::Pixel lineColor, olc::Pixel color, bool playerBullet, double lifeTime) {
 
+	this->playerBullet = playerBullet;
 	life = CooldownTimer(lifeTime);
 
 	double l = 20;
@@ -124,19 +125,27 @@ void Bullet::update(SpaceMinerGame* game, float fElapsedTime) {
 	if (colls->size() > 0) {
 		int collID = colls->at(0).otherBodyID;
 
-		for (Enemy* e : *game->getEnemies()) {
-			if (e->getRigidBody()->getID() == collID) {
-				e->damage(35);
-				break;
+		if (playerBullet) {
+			for (Enemy* e : *game->getEnemies()) {
+				if (e->getRigidBody()->getID() == collID) {
+					e->damage(35);
+					break;
+				}
+			}
+		}
+		else {
+
+			if (game->getPlayer() != nullptr && game->getPlayer()->getRigidBody()->getID() == collID) {
+				game->getPlayer()->damage(20);
 			}
 		}
 
-		for (Asteroid* a : *game->getAsteroids()) {
+		/*for (Asteroid* a : *game->getAsteroids()) {
 			if (a->getRigidBody()->getID() == collID) {
 				a->damage(35);
 				break;
 			}
-		}
+		}*/
 
 		Particle::generateExplosion(game, body->getCenterOfMass(), 0.5, 350, 50, olc::WHITE);
 		collided = true;

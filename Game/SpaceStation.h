@@ -3,6 +3,7 @@
 #include "Updatable.h"
 #include "CooldownTimer.h"
 #include "MovingObject.h"
+#include "Player.h"
 
 class SpaceStation : public Updatable, public Drawable {
 public:
@@ -10,6 +11,7 @@ public:
 	
 	void update(SpaceMinerGame* game, float fElapsedTime);
 	void draw(PixelEngine3D* g, Vector3D cameraPos, Rotor cameraDir, double FOV);
+	bool canOpenShop(Player* p);
 private:
 	void createStructure();
 
@@ -21,7 +23,7 @@ private:
 		PhysicsObject* body;
 		PhysicsObject* gun;
 		static double size;
-	public: //TODO REMAKE PRIVATE
+	private:
 		
 		uint16_t targetID;
 		Vector3D prevTargetVel;
@@ -46,8 +48,6 @@ private:
 	Turret* turret1;
 	Turret* turret2;
 	PhysicsObject* mainStructure;
-
-	std::vector<Vector3D> points; //temp
-	std::vector<Polygon3D> polygons;
+	double shopRange = 1200;
 	
 };

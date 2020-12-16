@@ -32,11 +32,6 @@ void SpaceStation::draw(PixelEngine3D* g, Vector3D cameraPos, Rotor cameraDir, d
 	turret1->gun->draw(g, cameraPos, cameraDir, FOV);
 	turret2->body->draw(g, cameraPos, cameraDir, FOV);
 	turret2->gun->draw(g, cameraPos, cameraDir, FOV);
-
-	if (turret1->target != nullptr) {
-		Vector3D leadTarget = Projectile::calculateLeadPoint(turret1->gun->getPos(), turret1->target->getPos(), Vector3D(0, 0, 0), turret1->target->getRigidBody()->getVelocity(), turret1->bulletVel);
-		//g->draw3DPoint(leadTarget, cameraPos, cameraDir, FOV, olc::RED);
-	}
 }
 
 SpaceStation::Turret::Turret(PhysicsObject* body, PhysicsObject* gun, Vector3D upDir) {
@@ -139,11 +134,19 @@ void SpaceStation::Turret::shoot(SpaceMinerGame* game) {
 	}
 }
 
+bool SpaceStation::canOpenShop(Player* p) {
+	ConvexHull* mainHull = mainStructure->getRigidBody()->getHulls()->at(0);
+	Vector3D toHull = mainHull->getCenterOfMass().sub(p->getPos());
+	return p->getDir().dotProduct(toHull) > 0
+		&& toHull.getMagnitude() <= mainHull->getCollisionRadius() + shopRange;
+}
+
 void SpaceStation::createStructure() {
 
 	double s = 2700;
 	Turret::size = 5 * s / 9.0;
 
+	std::vector<Vector3D> points;
 	double r1 = 2 * s / 9.0;
 	points.push_back(Vector3D(2 * r1 / sqrt(3), 0, 0));
 	points.push_back(Vector3D(r1 / sqrt(3), 0, -r1));
@@ -255,6 +258,7 @@ void SpaceStation::createStructure() {
 	olc::Pixel wColor = olc::DARK_CYAN;
 	olc::Pixel wLineColor = olc::DARK_CYAN;
 
+	std::vector<Polygon3D> polygons;
 	polygons.push_back(Polygon3D(points.at(54), points.at(1), points.at(0), lineColor, color));
 	polygons.push_back(Polygon3D(points.at(54), points.at(2), points.at(1), lineColor, color));
 	polygons.push_back(Polygon3D(points.at(54), points.at(3), points.at(2), lineColor, color));
