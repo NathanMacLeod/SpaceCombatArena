@@ -126,6 +126,7 @@ void Bullet::update(SpaceMinerGame* game, float fElapsedTime) {
 		int collID = colls->at(0).otherBodyID;
 
 		if (playerBullet) {
+			game->playSoundEffect(SpaceMinerGame::Hit);
 			for (Enemy* e : *game->getEnemies()) {
 				if (e->getRigidBody()->getID() == collID) {
 					e->damage(35);

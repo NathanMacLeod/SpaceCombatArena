@@ -92,8 +92,16 @@ bool SpaceMinerGame::OnUserCreate() {
 		asteroid->getRigidBody()->setVelocity(Vector3D(2 * (rand() % v) - v, 2 * (rand() % v) - v, 2 * (rand() % v) - v));
 	}*/
 	
+	initAudio();
+
 	pEngine.setGravity(Vector3D(0, 0, 0));
 
+	return true;
+}
+
+bool SpaceMinerGame::OnUserDestroy()
+{
+	olc::SOUND::DestroyAudio();
 	return true;
 }
 
@@ -216,28 +224,32 @@ void SpaceMinerGame::handleGameStates(float fElapsedTime) {
 		break;
 	case InWave:
 		if (enemies.size() == 0) {
-			if (nSubWave <= 0) {
-				currentState = InbetweenWave;
-				roundEndDelay.reset();
-			}
-			else {
-				nSubWave--;
-				int nEnemies = 1 + currWave / 2;
-				float eliteProb = 1.0 - 1.0 / (0.33 * currWave);
-
-				int nElite = 0;
-				int nNormal = 0;
-				for (int i = 0; i < nEnemies; i++) {
-					float randF = (float)rand() / RAND_MAX;
-					if (randF < eliteProb) {
-						nElite++;
-					}
-					else {
-						nNormal++;
-					}
+			spawnDelay.updateTimer(fElapsedTime);
+			if (spawnDelay.isReady()) {
+				spawnDelay.reset();
+				if (nSubWave <= 0) {
+					currentState = InbetweenWave;
+					roundEndDelay.reset();
 				}
+				else {
+					nSubWave--;
+					int nEnemies = 1 + currWave / 2;
+					float eliteProb = 1.0 - 1.0 / (0.33 * currWave);
 
-				spawnEnemies(nNormal, nElite);
+					int nElite = 0;
+					int nNormal = 0;
+					for (int i = 0; i < nEnemies; i++) {
+						float randF = (float)rand() / RAND_MAX;
+						if (randF < eliteProb) {
+							nElite++;
+						}
+						else {
+							nNormal++;
+						}
+					}
+
+					spawnEnemies(nNormal, nElite);
+				}
 			}
 		}
 		break;
@@ -315,6 +327,7 @@ void SpaceMinerGame::initMenu() {
 }
 
 void SpaceMinerGame::gameUpdate(float fElapsedTime) {
+
 	if (player != nullptr) {
 		pEngine.setOctree(true, player->getPos(), worldSize * 1.5, 300);
 	}
@@ -326,6 +339,7 @@ void SpaceMinerGame::gameUpdate(float fElapsedTime) {
 	}
 	//station->update(this, fElapsedTime);
 	handleGameStates(fElapsedTime);
+	manageLoopedAudio();
 
 	for (Projectile* p : projectiles) {
 		p->update(this, fElapsedTime);
@@ -533,6 +547,7 @@ bool SpaceMinerGame::OnUserUpdate(float fElapsedTime) {
 }
 
 void SpaceMinerGame::spawnEnemies(int nNormal, int nElite) {
+	playSoundEffect(Spawn);
 	double theta = 2 * 3.14159 * (double)rand() / RAND_MAX;
 	double phi = 3.14159 * (double)rand() / RAND_MAX;
 	double r = Player::KM_CONST * (0.75 + 0.5 * (double)rand() / RAND_MAX);
@@ -616,7 +631,7 @@ void SpaceMinerGame::clickMainMenu() {
 			currWave = 0;
 			currentState = InbetweenWave;
 			AsteroidChunk::unloadAllChunks(this);
-			player = new Player(Vector3D(200, 0, 0), Player::Twin, this);
+			player = new Player(Vector3D(200, 0, 0), this);
 			pEngine.addRigidBody(player->getRigidBody());
 		}
 		else if (getMenuButtonHovered(ScreenHeight() * instructionButtonY, menuSize, instrStr.size())) {
@@ -640,6 +655,127 @@ bool SpaceMinerGame::getMenuButtonHovered(int yVal, int textSize, int textLen) {
 	int bY = yVal - bHeight / 2;
 
 	return mX >= bX && mX <= bX + bWidth && mY >= bY && mY <= bY + bHeight;
+}
+
+void SpaceMinerGame::initAudio() {
+	olc::SOUND::InitialiseAudio();
+	olc::ResourcePack* pack = new olc::ResourcePack();
+	pack->LoadPack("./SoundPack.dat", "SPACE COMBAT ARENA");
+
+	pewSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/pew1.wav", pack));
+	pewSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/pew2.wav", pack));
+	pewSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/pew3.wav", pack));
+	pewSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/pew4.wav", pack));
+	damageSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/damage1.wav", pack));
+	damageSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/damage2.wav", pack));
+	damageSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/damage3.wav", pack));
+	explosionSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/explosion1.wav", pack));
+	explosionSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/explosion2.wav", pack));
+	explosionSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/explosion3.wav", pack));
+	hitSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/hit1.wav", pack));
+	hitSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/hit2.wav", pack));
+	hitSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/hit3.wav", pack));
+	hitSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/hit4.wav", pack));
+	rocketSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/rocket1.wav", pack));
+	rocketSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/rocket2.wav", pack));
+	spawnSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/spawn1.wav", pack));
+	spawnSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/spawn2.wav", pack));
+	spawnSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/spawn3.wav", pack));
+	growlLoop = olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/rocketGrowl.wav", pack);
+	toneLoop = olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/rocketTone.wav", pack);
+	growlActive = false;
+	toneActive = false;
+
+	//for generating the resource pack from the original files
+	if (false) {
+		olc::ResourcePack* pack = new olc::ResourcePack();
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/pew1.wav");
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/pew2.wav");
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/pew3.wav");
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/pew4.wav");
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/damage1.wav");
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/damage2.wav");
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/damage3.wav");
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/explosion1.wav");
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/explosion2.wav");
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/explosion3.wav");
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/hit1.wav");
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/hit2.wav");
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/hit3.wav");
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/hit4.wav");
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/rocket1.wav");
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/rocket2.wav");
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/spawn1.wav");
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/spawn2.wav");
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/spawn3.wav");
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/rocketGrowl.wav");
+		pack->AddFile("C:/Users/macle/OneDrive/Desktop/sfx/rocketTone.wav");
+		pack->SavePack("SoundPack.dat", "SPACE COMBAT ARENA");
+	}
+}
+
+void SpaceMinerGame::playSoundEffect(SFX soundEffect) {
+	std::vector<int>* soundIDs = nullptr;
+	switch (soundEffect) {
+	case Explosion:
+		soundIDs = &explosionSounds;
+		break;
+	case Pew:
+		soundIDs = &pewSounds;
+		break;
+	case Damage:
+		soundIDs = &damageSounds;
+		break;
+	case Hit:
+		soundIDs = &hitSounds;
+		break;
+	case Rocket:
+		soundIDs = &rocketSounds;
+		break;
+	case Spawn:
+		soundIDs = &spawnSounds;
+		break;
+	}
+
+	if (soundIDs != nullptr) {
+		int i = rand() % soundIDs->size();
+		olc::SOUND::PlaySample((*soundIDs)[i]);
+	}
+}
+
+void SpaceMinerGame::manageLoopedAudio() {
+	if (player == nullptr || player->getMissileState() == -1) {
+		if (growlActive) {
+			olc::SOUND::StopSample(growlLoop);
+			growlActive = false;
+		}
+		if (toneActive) {
+			olc::SOUND::StopSample(toneLoop);
+			toneActive = false;
+		}
+	}
+	else  {
+		if (player->getMissileState()) {
+			if (growlActive) {
+				olc::SOUND::StopSample(growlLoop);
+				growlActive = false;
+			}
+			if (!toneActive) {
+				olc::SOUND::PlaySample(toneLoop, true);
+				toneActive = true;
+			}
+		}
+		else {
+			if (!growlActive) {
+				olc::SOUND::PlaySample(growlLoop, true);
+				growlActive = true;
+			}
+			if (toneActive) {
+				olc::SOUND::StopSample(toneLoop);
+				toneActive = false;
+			}
+		}
+	}
 }
 
 PhysicsEngine* SpaceMinerGame::getPhysicsEngine() {

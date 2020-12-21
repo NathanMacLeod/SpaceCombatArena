@@ -117,6 +117,7 @@ void Enemy::performDeathActions(SpaceMinerGame* game) {
 	Particle::generateExplosion(game, getPos(), 0.9, 1550, 250, olc::MAGENTA);
 	Particle::generateExplosion(game, getPos(), 1.0, 1250, 250, olc::GREEN);
 	Particle::generateExplosion(game, getPos(), 1.1, 750, 170, olc::RED);
+	game->playSoundEffect(SpaceMinerGame::Explosion);
 
 	for (int i = 0; i < 3; i++) {
 		double speed = 350;

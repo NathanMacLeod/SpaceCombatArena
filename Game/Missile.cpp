@@ -10,11 +10,11 @@ Missile::Missile(Vector3D pos, Rotor orientation, Vector3D vel, PhysicsObject* t
 	olc::Pixel highlight;
 
 	if (playerMissile) {
-		angularDampFactor = 25.0;
+		angularDampFactor = 30.0;
 		linearDampFactor = 15;
 		forwardThrust = 4000;
-		pitchRate = 35;
-		yawRate = 35;
+		pitchRate = 55;
+		yawRate = 55;
 
 		lineColor = olc::BLACK;
 		color = olc::DARK_RED;
@@ -24,9 +24,9 @@ Missile::Missile(Vector3D pos, Rotor orientation, Vector3D vel, PhysicsObject* t
 	else {
 		angularDampFactor = 12.0;
 		linearDampFactor = 3;
-		forwardThrust = 2000;
-		pitchRate = 12;
-		yawRate = 12;
+		forwardThrust = 2200;
+		pitchRate = 15;
+		yawRate = 15;
 
 		lineColor = olc::BLACK;
 		color = olc::DARK_MAGENTA;
@@ -192,7 +192,7 @@ void Missile::aimAtTarget(float fElapsedTime) {
 		return;
 	}
 
-	Vector3D targetRel = Projectile::calculateLeadPoint(getPos(), target->getPos(), body->getVelocity(), target->getRigidBody()->getVelocity(), body->getVelocity().getMagnitude(),
+	Vector3D targetRel = Projectile::calculateLeadPoint(getPos(), target->getPos(), body->getVelocity().multiply((playerMissile? 0.02 : 0.8)), target->getRigidBody()->getVelocity(), body->getVelocity().getMagnitude(),
 		true, 0, targetPrevVel, fElapsedTime);
 
 	targetPrevVel = target->getRigidBody()->getVelocity();
@@ -252,6 +252,7 @@ void Missile::update(SpaceMinerGame* game, float fElapsedTime) {
 		int collID = colls->at(0).otherBodyID;
 
 		if (playerMissile) {
+			game->playSoundEffect(SpaceMinerGame::Hit);
 			for (Enemy* e : *game->getEnemies()) {
 				if (e->getRigidBody()->getID() == collID) {
 					e->damage(100);

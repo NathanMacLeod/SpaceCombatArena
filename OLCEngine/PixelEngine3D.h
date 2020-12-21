@@ -9,6 +9,8 @@
 #include "Polygon3D.h"
 #include "../Math/transformation3D.h"
 #include "../Math/Rotor.h"
+#include "olcPGEX_Sound.h"
+
 
 class PixelEngine3D : public olc::PixelGameEngine {
 

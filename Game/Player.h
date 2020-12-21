@@ -27,7 +27,7 @@ public:
 
 	void applyUpgradeProfile(const UpgradeProfile& upgrades);
 	int* getInventory();
-	Player(Vector3D position, GunType gun, SpaceMinerGame* g);
+	Player(Vector3D position, SpaceMinerGame* g);
 	void setEquippedTool(Tool t);
 	void update(SpaceMinerGame* game, float fElapsedTime);
 	void shoot(SpaceMinerGame* game);
@@ -43,12 +43,15 @@ public:
 	void performDeathActions(SpaceMinerGame* game);
 	bool isExpired();
 	int getMoney();
+	int getMissileState();
 private:
 	
+	bool damaged = false;
 	double radarRange = 1;
 	double radarSize = 0.7;
 	std::vector<Vector3D> radarPoints;
 	Vector3D radarPos;
+	float bulletSpawnDist = 150;
 	 
 	int invSize = 80;
 	Vector3D invOrePos[Ore::N_TYPES];

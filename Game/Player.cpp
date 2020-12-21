@@ -3,9 +3,8 @@
 #include "Missile.h"
 #include "SpaceMinerGame.h"
 
-Player::Player(Vector3D position, GunType gun, SpaceMinerGame* g) {
+Player::Player(Vector3D position, SpaceMinerGame* g) {
 
-	this->gun = gun;
 	angularDampFactor = 3;
 	linearDampFactor = 0.45;
 
@@ -13,7 +12,7 @@ Player::Player(Vector3D position, GunType gun, SpaceMinerGame* g) {
 	equippedTool = Guns;
 
 	MovingObject::createShipMesh(true, 35, olc::VERY_DARK_RED, olc::BLACK,
-		olc::VERY_DARK_MAGENTA, olc::BLACK, olc::DARK_GREEN, olc::VERY_DARK_GREEN, &body, &model);
+		olc::VERY_DARK_RED, olc::BLACK, olc::DARK_GREEN, olc::VERY_DARK_GREEN, &body, &model);
 	//createStructure();
 
 	grabDist = body->getCollisionRadius() * 2;
@@ -48,6 +47,7 @@ Player::UpgradeProfile::UpgradeProfile() {
 void Player::damage(double damage) {
 	hp -= damage;
 	damageDisplayTime.reset();
+	damaged = true;
 }
 
 void Player::roundReset() {
@@ -233,19 +233,25 @@ void Player::update(SpaceMinerGame* game, float fElapsedTime) {
 		savedPrevVel = targetPrevVel;
 		targetPrevVel = target->getRigidBody()->getVelocity();
 
-		if (equippedTool == Missiles && !targetLocked) {
-			double targetAngCos = target->getPos().sub(getPos()).getUnitVector().dotProduct(getDir());
-			if (targetAngCos >= missileLockCos) {
-				targetLockTime.updateTimer(fElapsedTime);
-				if (targetLockTime.isReady()) {
-					targetLocked = true;
+		if (nRockets > 0) {
+			if (equippedTool == Missiles && !targetLocked) {
+				double targetAngCos = target->getPos().sub(getPos()).getUnitVector().dotProduct(getDir());
+				if (targetAngCos >= missileLockCos) {
+					targetLockTime.updateTimer(fElapsedTime);
+					if (targetLockTime.isReady()) {
+						targetLocked = true;
+						targetLockTime.reset();
+					}
+				}
+				else {
+					targetLocked = false;
 					targetLockTime.reset();
 				}
 			}
-			else {
-				targetLocked = false;
-				targetLockTime.reset();
-			}
+		}
+		else {
+			targetLocked = false;
+			targetLockTime.reset();
 		}
 	}
 
@@ -257,6 +263,11 @@ void Player::update(SpaceMinerGame* game, float fElapsedTime) {
 		}
 	}
 	
+	if (damaged) {
+		game->playSoundEffect(SpaceMinerGame::Damage);
+		damaged = false;
+	}
+
 	damageDisplayTime.updateTimer(fElapsedTime);
 	inventoryFullMessageTime.updateTimer(fElapsedTime);
 	missileFireRate.updateTimer(fElapsedTime);
@@ -324,6 +335,7 @@ void Player::pickUpOre(SpaceMinerGame* game) {
 
 void Player::fireRocket(SpaceMinerGame* game) {
 	if (nRockets > 0 && missileFireRate.isReady() && targetLocked) {
+		game->playSoundEffect(SpaceMinerGame::Rocket);
 		nRockets--;
 		double launchVel = 900;
 		Vector3D launchDir = body->getOrientation().rotate(Vector3D(0, 1, 0)).multiply(launchVel);
@@ -336,14 +348,14 @@ void Player::fireRocket(SpaceMinerGame* game) {
 void Player::fireBullet(SpaceMinerGame* game) {
 	if (shootTimer.isReady()) {
 		shootTimer.reset();
+		game->playSoundEffect(SpaceMinerGame::Pew);
 
 		Vector3D dir = body->getOrientation().rotate(Vector3D(1, 0, 0));
-		double spawnDist = 150;
 
 		Vector3D variation(0, 0, 0);
 		Vector3D offset;
 		double r;
-		Vector3D spawnPos = body->getCenterOfMass().add(dir.multiply(spawnDist));
+		Vector3D spawnPos = body->getCenterOfMass().add(dir.multiply(bulletSpawnDist));
 
 		static int twinDir = 1;
 		switch (gun) {
@@ -442,7 +454,7 @@ void Player::drawPlayerUI(SpaceMinerGame* g, double FOV) {
 		Vector3D toEnemy = enemy->getPos().sub(getPos());
 		if (getDir().dotProduct(toEnemy) > 0) {
 			double r1 = enemy->getRigidBody()->getCollisionRadius() * 1.25 * FOV / getDir().dotProduct(toEnemy);
-			r1 = std::max(r1Min, r1);
+			r1 = std::max<float>(r1Min, r1);
 			Vector3D enemyScreenPos = g->getPixelCoord(enemy->getPos(), camPos, camOrient, FOV);
 			g->DrawCircle(enemyScreenPos.x, enemyScreenPos.y, r1, color);
 		}
@@ -454,7 +466,7 @@ void Player::drawPlayerUI(SpaceMinerGame* g, double FOV) {
 			double r1Min = 12;
 			
 			double r1 = target->getRigidBody()->getCollisionRadius() * 1.25 * FOV / getDir().dotProduct(toEnemy);
-			r1 = std::max(r1Min, r1);
+			r1 = std::max<float>(r1Min, r1);
 			Vector3D enemyScreenPos = g->getPixelCoord(target->getPos(), camPos, camOrient, FOV);
 			double enemyDist = getKMToP(target->getPos());
 			sprintf_s(buff, "%.2f KM", enemyDist);
@@ -466,7 +478,7 @@ void Player::drawPlayerUI(SpaceMinerGame* g, double FOV) {
 				if (hasGunsight && enemyDist <= 1.5) {
 					double r2 = 7;
 					Vector3D leadPos = getPos().add(Projectile::calculateLeadPoint(getPos(), target->getPos(), body->getVelocity(), target->getRigidBody()->getVelocity(),
-						bulletVel, true, 0, targetPrevVel, timeStep));
+						bulletVel, true, bulletSpawnDist, targetPrevVel, timeStep));
 					Vector3D leadScreenPos = g->getPixelCoord(leadPos, camPos, camOrient, FOV);
 					g->DrawCircle(leadScreenPos.x, leadScreenPos.y, r2, color);
 
@@ -512,7 +524,7 @@ void Player::drawPlayerUI(SpaceMinerGame* g, double FOV) {
 	std::string moneyMsg(buff);
 	g->DrawString(g->ScreenHeight() / 24, g->ScreenHeight() / 24, moneyMsg, olc::WHITE, 1);
 
-	if (!inventoryFullMessageTime.isReady()) {
+	/*if (!inventoryFullMessageTime.isReady()) {
 		char s1[] = "INVENTORY FULL";
 		g->DrawString(centerX - strlen(s1) * 8, centerY, s1, olc::RED, 2);
 		char s2[] = "Hold TAB to manage inventory";
@@ -522,7 +534,7 @@ void Player::drawPlayerUI(SpaceMinerGame* g, double FOV) {
 	if (g->canOpenShop()) {
 		static std::string str("Press G to open shop");
 		g->DrawString(centerX - str.size() * 8, centerY * 4 / 5, str, olc::WHITE, 2);
-	}
+	}*/
 
 	/*Ore* highlightedOre = getOreToGrab(g);
 	if (highlightedOre != nullptr) {
@@ -594,22 +606,23 @@ void Player::drawPlayerUI(SpaceMinerGame* g, double FOV) {
 	for (Enemy* e : *g->getEnemies()) {
 		Vector3D toE = e->getPos().sub(getPos());
 		double dist = toE.getMagnitude();
-		if (dist / KM_CONST <= radarRange) {
-			
-			Vector3D eRadarPos = radarPos.add(inv.rotate(toE.multiply(radarSize / (KM_CONST * radarRange))));
-			Rotor enemyRelOrient = e->getRigidBody()->getOrientation().applyRotor(inv);
-			std::vector<Vector3D> points = radarTri;
+		//if (dist <= radarRange * KM_CONST) {
+		//	dist = radarRange * KM_CONST;
+		//}
+		Vector3D eRadarPos = radarPos.add(inv.rotate(toE.multiply(radarSize / (KM_CONST * radarRange))));
+		Rotor enemyRelOrient = e->getRigidBody()->getOrientation().applyRotor(inv);
+		std::vector<Vector3D> points = radarTri;
 
-			for (int i = 0; i < points.size(); i++) {
-				points[i] = eRadarPos.add(enemyRelOrient.rotate(points[i]));
-			}
-			Polygon3D p1 = Polygon3D(points.at(0), points.at(1), points.at(2), olc::RED, olc::DARK_RED);
-			Polygon3D p2 = Polygon3D(points.at(2), points.at(1), points.at(0), olc::RED, olc::DARK_RED);
-			
-			g->drawPolygon(p1, Vector3D(), rDir, FOV, true);
-			g->drawPolygon(p2, Vector3D(), rDir, FOV, true);
-			g->draw3DLine(eRadarPos, points.at(3), Vector3D(), rDir, FOV, olc::RED);
+		for (int i = 0; i < points.size(); i++) {
+			points[i] = eRadarPos.add(enemyRelOrient.rotate(points[i]));
 		}
+		Polygon3D p1 = Polygon3D(points.at(0), points.at(1), points.at(2), olc::RED, olc::DARK_RED);
+		Polygon3D p2 = Polygon3D(points.at(2), points.at(1), points.at(0), olc::RED, olc::DARK_RED);
+			
+		g->drawPolygon(p1, Vector3D(), rDir, FOV, true);
+		g->drawPolygon(p2, Vector3D(), rDir, FOV, true);
+		g->draw3DLine(eRadarPos, points.at(3), Vector3D(), rDir, FOV, olc::RED);
+		
 	}
 }
 
@@ -617,6 +630,7 @@ void Player::performDeathActions(SpaceMinerGame* game) {
 	Particle::generateExplosion(game, getPos(), 1.9, 1550, 250, olc::RED);
 	Particle::generateExplosion(game, getPos(), 1.0, 1250, 250, olc::WHITE);
 	Particle::generateExplosion(game, getPos(), 2.4, 750, 170, olc::YELLOW);
+	game->playSoundEffect(SpaceMinerGame::Explosion);
 
 	for (int i = 0; i < 3; i++) {
 		double speed = 350;
@@ -654,4 +668,16 @@ int* Player::getInventory() {
 
 void Player::alterMoney(int deltaCash) {
 	money += deltaCash;
+}
+
+int Player::getMissileState() {
+	if (equippedTool == Missiles && nRockets > 0) {
+		if (targetLocked && target != nullptr) {
+			return 1;
+		}
+		else {
+			return 0;
+		}
+	}
+	return -1;
 }
