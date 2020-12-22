@@ -670,7 +670,7 @@ void SpaceMinerGame::initAudio() {
 	damageSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/damage2.wav", pack));
 	damageSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/damage3.wav", pack));
 	explosionSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/explosion1.wav", pack));
-	explosionSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/explosion2.wav", pack));
+	explosionSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/explosion2.wav",  pack));
 	explosionSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/explosion3.wav", pack));
 	hitSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/hit1.wav", pack));
 	hitSounds.push_back(olc::SOUND::LoadAudioSample("C:/Users/macle/OneDrive/Desktop/sfx/hit2.wav", pack));

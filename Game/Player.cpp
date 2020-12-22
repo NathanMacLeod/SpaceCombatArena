@@ -5,7 +5,7 @@
 
 Player::Player(Vector3D position, SpaceMinerGame* g) {
 
-	angularDampFactor = 3;
+	angularDampFactor = 6;
 	linearDampFactor = 0.45;
 
 	money = false;
@@ -53,6 +53,7 @@ void Player::damage(double damage) {
 void Player::roundReset() {
 	hp = maxHp;
 	nRockets = nMaxRockets;
+	missileRechargeTime.reset();
 }
 
 bool Player::isExpired() {
@@ -138,9 +139,9 @@ void Player::applyUpgradeProfile(const UpgradeProfile& upgrades) {
 	gun = upgrades.gun;
 	hasRockets = upgrades.hasMissiles;
 	hasGunsight = upgrades.hasGunsight;
-	pitchRate = 6;
-	yawRate = 6;
-	rollRate = 3;
+	pitchRate = 8;
+	yawRate = 8;
+	rollRate = 5;
 	forwardThrust = 850 + 300 * upgrades.thrustLevel;
 	radarRange = 1 + .5 * upgrades.radarLevel;
 	sideThrust = 650;

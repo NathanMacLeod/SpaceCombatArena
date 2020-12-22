@@ -44,6 +44,7 @@ public:
 	bool isExpired();
 	int getMoney();
 	int getMissileState();
+
 private:
 	
 	bool damaged = false;
