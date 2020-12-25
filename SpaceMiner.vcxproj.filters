@@ -119,6 +119,15 @@
     <ClInclude Include="Math\Matrix33.h">
       <Filter>Math</Filter>
     </ClInclude>
+    <ClInclude Include="Game\ShopMenu.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\AsteroidChunk.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="OLCEngine\olcPGEX_Sound.h">
+      <Filter>OLCEngine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Math\Vector3D.cpp">
@@ -192,6 +201,15 @@
     </ClCompile>
     <ClCompile Include="Math\Matrix33.cpp">
       <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\ShopMenu.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\AsteroidChunk.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="OLCEngine\olcPGEX_Sound.cpp">
+      <Filter>OLCEngine</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

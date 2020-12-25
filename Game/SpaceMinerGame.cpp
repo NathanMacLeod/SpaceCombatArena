@@ -427,7 +427,7 @@ void SpaceMinerGame::gameUpdate(float fElapsedTime) {
 }
 
 void SpaceMinerGame::gameRender() {
-	static double fv = 300;
+	static double fv = 300 * ScreenWidth() / 960.0;
 
 	clearZBuffer();
 	Clear(olc::BLACK);
