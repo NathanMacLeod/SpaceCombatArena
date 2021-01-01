@@ -10,7 +10,7 @@ Missile::Missile(Vector3D pos, Rotor orientation, Vector3D vel, PhysicsObject* t
 	olc::Pixel highlight;
 
 	if (playerMissile) {
-		angularDampFactor = 30.0;
+		angularDampFactor = 30;
 		linearDampFactor = 15;
 		forwardThrust = 4000;
 		pitchRate = 55;

@@ -7,9 +7,9 @@ struct Rotor {
 	Rotor(Vector3D unitAxis, double theta);
 	Rotor();
 
-	Vector3D rotate(Vector3D p);
-	Rotor applyRotor(Rotor r);
-	Rotor getInverse();
+	Vector3D rotate(const Vector3D p) const;
+	 Rotor applyRotor(const Rotor r) const;
+	Rotor getInverse() const;
 
 	bool operator!=(const Rotor& r);
 	bool operator==(const Rotor& r);

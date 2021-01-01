@@ -23,7 +23,7 @@ Rotor::Rotor(Vector3D unitAxis, double theta) {
 	this->d = -s * unitAxis.y; //e3e1
 }
 
-Vector3D Rotor::rotate(Vector3D p) {
+Vector3D Rotor::rotate(const Vector3D p) const {
 	/* RpR^-1									:: p-vector
 	= (a + B)p(a - B)							:: a-scalar, B-Bivector 
 	= (ap + Bp)(a - B)
@@ -42,7 +42,7 @@ Vector3D Rotor::rotate(Vector3D p) {
 }
 
 //multiplying r from left
-Rotor Rotor::applyRotor(Rotor r) {
+Rotor Rotor::applyRotor(const Rotor r) const {
 	double aVal = a * r.a - b * r.b - c * r.c - d * r.d;
 	double bVal = a * r.b + r.a * b + (r.d * c - r.c * d);
 	double cVal = a * r.c + r.a * c + (r.b * d - r.d * b);
@@ -50,7 +50,7 @@ Rotor Rotor::applyRotor(Rotor r) {
 	return Rotor(aVal, bVal, cVal, dVal);
 }
 
-Rotor Rotor::getInverse() {
+Rotor Rotor::getInverse() const {
 	return Rotor(a, -b, -c, -d);
 }
 

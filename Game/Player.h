@@ -47,6 +47,7 @@ public:
 
 private:
 	
+	int size = 35;
 	bool damaged = false;
 	double radarRange = 1;
 	double radarSize = 0.7;

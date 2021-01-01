@@ -11,7 +11,7 @@ Player::Player(Vector3D position, SpaceMinerGame* g) {
 	money = false;
 	equippedTool = Guns;
 
-	MovingObject::createShipMesh(true, 35, olc::VERY_DARK_RED, olc::BLACK,
+	MovingObject::createShipMesh(true, size, olc::VERY_DARK_RED, olc::BLACK,
 		olc::VERY_DARK_RED, olc::BLACK, olc::DARK_GREEN, olc::VERY_DARK_GREEN, &body, &model);
 	//createStructure();
 
@@ -26,8 +26,8 @@ Player::Player(Vector3D position, SpaceMinerGame* g) {
 
 	initInvPos(g);
 	findIVals();
-	hp = 100;
 	maxHp = 100;
+	hp = 100;
 
 	for (int i = 0; i < Ore::N_TYPES; i++) {
 		inventory[i] = 0;
@@ -196,7 +196,7 @@ void Player::setEquippedTool(Tool t) {
 
 void Player::getCameraPosOrient(Vector3D* posOut, Rotor* orientOut) {
 	*orientOut = Rotor(Vector3D(0, 1, 0), 3.14159 / 2.0).applyRotor(body->getOrientation());
-	*posOut = orientOut->rotate(Vector3D(0, 0, 65)).add(body->getCenterOfMass());
+	*posOut = orientOut->rotate(Vector3D(0, 0, 65 * size / 35)).add(body->getCenterOfMass());
 }
 
 void Player::selectTarget(SpaceMinerGame* game) {
@@ -209,12 +209,12 @@ void Player::selectTarget(SpaceMinerGame* game) {
 		}
 		Vector3D toE = e->getPos().sub(getPos()).getUnitVector();
 		double cosAng = toE.dotProduct(dir);
-		if (cosAng > maxLockAng) {
+		if (cosAng > maxCos) {
 			newTarget = e;
 			maxCos = cosAng;
 		}
 	}
-	if (newTarget != nullptr && newTarget != target) {
+	if (newTarget != nullptr) {
 		target = newTarget;
 		targetID = target->getRigidBody()->getID();
 		targetLocked = false;
