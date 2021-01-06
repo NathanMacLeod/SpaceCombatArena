@@ -1,6 +1,7 @@
 #include "Ore.h"
 #include "SpaceMinerGame.h"
 #include "Asteroid.h"
+#include "../Math/Prob.h"
 
 
 Ore::Ore(Vector3D pos, Material type, MovingObject::DebrisType debrisType) {
@@ -226,7 +227,7 @@ void Ore::update(SpaceMinerGame* game, float fElapsedTime) {
 	dampen(fElapsedTime);
 	life.updateTimer(fElapsedTime);
 	if (material == NormalDebris || material == EliteDebris || material == PlayerDebris) {
-		float lifeF = std::fmaxf(1, (life.getTimerTime() - life.getTime()) / 2.0);
+		
 		Vector3D originVar = Vector3D((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX).multiply(0.75 * 35);
 
 		olc::Pixel c1 = olc::RED;
@@ -238,9 +239,10 @@ void Ore::update(SpaceMinerGame* game, float fElapsedTime) {
 			c2 = olc::YELLOW;
 		}
 
-		Particle::generateExplosion(game, getPos().add(originVar), 0.7, 50, 1 / lifeF, c1);
-		Particle::generateExplosion(game, getPos().add(originVar), 0.9, 100, 1 / lifeF, c2);
-		Particle::generateExplosion(game, getPos().add(originVar), 4.5, 250, 1 / lifeF, c3);
+		float lifeF = std::fmax(1, life.getTimerTime() - life.getTime());
+		Particle::generateExplosion(game, getPos().add(originVar), 0.7, 50, poisson(90 * fElapsedTime / lifeF), c1);
+		Particle::generateExplosion(game, getPos().add(originVar), 0.9, 100, poisson(90 * fElapsedTime / lifeF), c2);
+		Particle::generateExplosion(game, getPos().add(originVar), 4.5, 250, poisson(90 * fElapsedTime / lifeF), c3);
 	}
 }
 

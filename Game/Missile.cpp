@@ -1,6 +1,7 @@
 #include "Missile.h"
 #include "Asteroid.h"
 #include "SpaceMinerGame.h"
+#include "../Math/Prob.h"
 
 Missile::Missile(Vector3D pos, Rotor orientation, Vector3D vel, PhysicsObject* target, uint16_t sourceID, bool playerMissile) {
 
@@ -281,14 +282,14 @@ void Missile::update(SpaceMinerGame* game, float fElapsedTime) {
 
 	accelForward(1, fElapsedTime);
 	if (playerMissile) {
-		Particle::generateExplosion(game, getPos(), 0.7, 50, 3, olc::RED);
-		Particle::generateExplosion(game, getPos(), 0.9, 100, 1, olc::YELLOW);
-		Particle::generateExplosion(game, getPos(), 1.5, 150, 3, olc::DARK_GREY);
+		Particle::generateExplosion(game, getPos(), 0.7, 50, poisson(180 * fElapsedTime), olc::RED);
+		Particle::generateExplosion(game, getPos(), 0.9, 100, poisson(60 * fElapsedTime), olc::YELLOW);
+		Particle::generateExplosion(game, getPos(), 1.5, 150, poisson(180 * fElapsedTime), olc::DARK_GREY);
 	}
 	else {
-		Particle::generateExplosion(game, getPos(), 0.7, 50, 3, olc::WHITE);
-		Particle::generateExplosion(game, getPos(), 0.9, 100, 3, olc::CYAN);
-		Particle::generateExplosion(game, getPos(), 1.5, 150, 1, olc::WHITE);
+		Particle::generateExplosion(game, getPos(), 0.7, 50, poisson(180 * fElapsedTime), olc::WHITE);
+		Particle::generateExplosion(game, getPos(), 0.9, 100, poisson(180 * fElapsedTime), olc::CYAN);
+		Particle::generateExplosion(game, getPos(), 1.5, 150, poisson(60 * fElapsedTime), olc::WHITE);
 	}
 	
 }

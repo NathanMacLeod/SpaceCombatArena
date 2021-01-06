@@ -3,6 +3,7 @@
 #include "Bullet.h"
 #include "Missile.h"
 #include "SpaceMinerGame.h"
+#include "../Math/Prob.h"
 
 Enemy::Enemy(Vector3D pos, Rotor orientation, Enemy::EnemyType type) {
 	//createStructure();
@@ -73,9 +74,9 @@ void Enemy::update(SpaceMinerGame* game, float fElapsedTime) {
 	if (hp / maxHp < 0.5) {
 		Vector3D smokePWorld = getPos().add(body->getOrientation().rotate(smokePoint));
 		Vector3D originVar = Vector3D((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX).multiply(0.75 * size);
-		Particle::generateExplosion(game, smokePWorld.add(originVar), 0.7, 50, 2, olc::RED);
-		Particle::generateExplosion(game, smokePWorld.add(originVar), 0.9, 100, 1, olc::GREEN);
-		Particle::generateExplosion(game, smokePWorld.add(originVar), 4.5, 250, 1, olc::DARK_GREY);
+		Particle::generateExplosion(game, smokePWorld.add(originVar), 0.7, 50, poisson(120 * fElapsedTime), olc::RED);
+		Particle::generateExplosion(game, smokePWorld.add(originVar), 0.9, 100, poisson(60 * fElapsedTime), olc::GREEN);
+		Particle::generateExplosion(game, smokePWorld.add(originVar), 4.5, 250, poisson(60 * fElapsedTime), olc::DARK_GREY);
 	}
 }
 
@@ -182,10 +183,10 @@ void Enemy::warpParticles(SpaceMinerGame* game) {
 
 	double trailRadius = 350;
 	int nTrail = 1000;
-	int nParticles = 2;
+	float nParticles = 1.5;
 	for (int i = 0; i < nTrail; i++) {
 		pos = pos.add(dir.multiply(trailRadius / 1.5));
-		Particle::generateExplosion(game, pos, 1.4 + 0.1 * (double) (nTrail - i) / nTrail, trailRadius, nParticles, olc::WHITE);
+		Particle::generateExplosion(game, pos, 1.4 + 0.1 * (double) (nTrail - i) / nTrail, trailRadius, poisson(nParticles), olc::WHITE);
 	}
 }
 
