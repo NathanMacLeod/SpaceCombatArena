@@ -319,7 +319,7 @@ void SpaceMinerGame::clearEverything() {
 
 void SpaceMinerGame::initMenu() {
 	clearEverything();
-	double density = 0.5 * 350 / (worldSize * worldSize * worldSize);
+	double density = 0;// 0.5 * 350 / (worldSize * worldSize * worldSize);
 	AsteroidChunk::setUniverseProperties(2000, worldSize, density);
 	AsteroidChunk::loadChunksAtPos(this, 0, 0, 0);
 	cameraPos = Vector3D(0, 0, 0);

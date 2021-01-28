@@ -52,7 +52,7 @@ void Enemy::update(SpaceMinerGame* game, float fElapsedTime) {
 	shootTimer.updateTimer(fElapsedTime);
 	missileTimer.updateTimer(fElapsedTime);
 
-	accelForward(1, fElapsedTime);
+	//accelForward(1, fElapsedTime);
 	Player* p = game->getPlayer();
 	if (p != nullptr) {
 
@@ -68,7 +68,7 @@ void Enemy::update(SpaceMinerGame* game, float fElapsedTime) {
 
 		Vector3D leadTarget = Projectile::calculateLeadPoint(getPos(), p->getPos(), body->getVelocity(), p->getRigidBody()->getVelocity(), bulletVel);
 
-		aimAtTarget(((getDir().dotProduct(toPlayer) > 0) ? leadTarget : toPlayer), acos(dir.dotProduct(leadTarget.getUnitVector())), fElapsedTime);
+		//aimAtTarget(((getDir().dotProduct(toPlayer) > 0) ? leadTarget : toPlayer), acos(dir.dotProduct(leadTarget.getUnitVector())), fElapsedTime);
 	}
 
 	if (hp / maxHp < 0.5) {

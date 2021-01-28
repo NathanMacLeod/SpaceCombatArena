@@ -196,7 +196,7 @@ void Player::setEquippedTool(Tool t) {
 
 void Player::getCameraPosOrient(Vector3D* posOut, Rotor* orientOut) {
 	*orientOut = Rotor(Vector3D(0, 1, 0), 3.14159 / 2.0).applyRotor(body->getOrientation());
-	*posOut = orientOut->rotate(Vector3D(0, 0, 65 * size / 35)).add(body->getCenterOfMass());
+	*posOut = orientOut->rotate(Vector3D(0, 0, -650 * size / 35)).add(body->getCenterOfMass());
 }
 
 void Player::selectTarget(SpaceMinerGame* game) {

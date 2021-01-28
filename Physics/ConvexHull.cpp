@@ -437,6 +437,7 @@ bool ConvexHull::SATColliderDetect(ConvexHull* potCollider, std::vector<ColPoint
 	bool colFound = false;
 
 	for (RigidSurface* s : surfaces) {
+
 		Vector3D n = s->getUnitNorm();
 
 		bool alreadyTested = false;
@@ -523,7 +524,7 @@ bool ConvexHull::SATColliderDetect(ConvexHull* potCollider, std::vector<ColPoint
 	}*/
 
 	//check colPoint in clipped manifold
-	static double tolerance = 5;
+	static double tolerance = 0;
 	if (colFound) {
 		for (int i = 0; i < colSurface->getPoints()->size(); i++) {
 			Vector3D* p1 = colSurface->getPoints()->at(i);

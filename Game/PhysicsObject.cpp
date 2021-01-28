@@ -32,13 +32,13 @@ void PhysicsObject::debugDraw(PixelEngine3D* g, Vector3D cameraPos, Rotor camera
 				Vector3D* p1 = s->getPoints()->at(i);
 				int j = (i == s->getPoints()->size() - 1) ? 0 : i + 1;
 				Vector3D* p2 = s->getPoints()->at(j);
-				g->draw3DLine(*p1, *p2, cameraPos, cameraDir, FOV, olc::GREEN);
+				g->draw3DLine(*p1, *p2, cameraPos, cameraDir, FOV, s->debugSurface? olc::MAGENTA : olc::GREEN);
 				avg = avg.add(*p1);
 			}
 
 			avg = avg.multiply(1.0 / s->getPoints()->size());
 
-			g->draw3DLine(avg, avg.add(s->getUnitNorm().multiply(150)), cameraPos, cameraDir, FOV, (s->isInteriorSurface()) ? olc::CYAN : olc::MAGENTA);
+			g->draw3DLine(avg, avg.add(s->getUnitNorm().multiply(25)), cameraPos, cameraDir, FOV, (s->isInteriorSurface()) ? olc::CYAN : olc::MAGENTA);
 		}
 	}
 }
@@ -49,7 +49,8 @@ void PhysicsObject::draw(PixelEngine3D* g, Vector3D cameraPos, Rotor cameraDir, 
 
 		model->setPosAndOrientation(body->getOrientation(), body->getCenterOfMass());
 	}
-	model->draw(g, cameraPos, cameraDir, FOV);
+	//model->draw(g, cameraPos, cameraDir, FOV);
+	debugDraw(g, cameraPos, cameraDir, FOV);
 }
  
 Vector3D PhysicsObject::getDir() {
