@@ -49,6 +49,7 @@
     <ClInclude Include="Game\SpaceStation.h" />
     <ClInclude Include="Game\Updatable.h" />
     <ClInclude Include="Math\Matrix33.h" />
+    <ClInclude Include="Math\Prob.h" />
     <ClInclude Include="Math\Rotor.h" />
     <ClInclude Include="Math\transformation3D.h" />
     <ClInclude Include="Math\Vector3D.h" />
@@ -81,6 +82,7 @@
     <ClCompile Include="Game\PolyModel.cpp" />
     <ClCompile Include="Game\SpaceStation.cpp" />
     <ClCompile Include="Math\Matrix33.cpp" />
+    <ClCompile Include="Math\Prob.cpp" />
     <ClCompile Include="Math\Rotor.cpp" />
     <ClCompile Include="Math\Vector3D.cpp" />
     <ClCompile Include="OLCEngine\olcPGEX_Sound.cpp" />

@@ -128,6 +128,9 @@
     <ClInclude Include="OLCEngine\olcPGEX_Sound.h">
       <Filter>OLCEngine</Filter>
     </ClInclude>
+    <ClInclude Include="Math\Prob.h">
+      <Filter>Math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Math\Vector3D.cpp">
@@ -210,6 +213,9 @@
     </ClCompile>
     <ClCompile Include="OLCEngine\olcPGEX_Sound.cpp">
       <Filter>OLCEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Prob.cpp">
+      <Filter>Math</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
