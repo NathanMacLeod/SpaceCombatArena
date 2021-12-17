@@ -7,7 +7,7 @@ Bullet::Bullet(Vector3D position, Rotor dir, Vector3D velocity, double density, 
 	this->playerBullet = playerBullet;
 	life = CooldownTimer(lifeTime);
 
-	double l = 20;
+	double l = 35;
 	double w = 5;
 
 	Vector3D p1(0, -w, -w);

@@ -16,22 +16,30 @@ class PixelEngine3D : public olc::PixelGameEngine {
 
 protected:
 
+	void setDimensions() {
+		sHeight = ScreenHeight();
+		sWidth = ScreenWidth();
+	}
+
 	void clearZBuffer() {
-		for (int i = 0; i < ScreenWidth() * ScreenHeight(); i++) {
+		for (int i = 0; i < sWidth * sHeight; i++) {
 			zBuffer[i] = -1;
 		}
 	}
 
 	void initZBuffer() {
-		zBuffer = new double[ScreenWidth() * ScreenHeight()];
+		zBuffer = new double[sWidth * sHeight];
 	}
 
 private:
 
+	int sHeight;
+	int sWidth;
+
 	double* zBuffer;
 
 	int getPixelIndex(int x, int y) {
-		return x + y * ScreenWidth();
+		return x + y * sWidth;
 	}
 
 	void drawLine3D(double x1, double y1, double x2, double y2, double fov, Vector3D p1Pre, Vector3D p2Pre, olc::Pixel color) {
@@ -62,18 +70,18 @@ private:
 			}
 
 			float m = (float)((int)(y2 - y1)) / (int) (x2 - x1);
-			for (int x = std::max<int>(0, x1); x <= std::min<int>(ScreenWidth() - 1, x2); x++) {
+			for (int x = std::max<int>(0, x1); x <= std::min<int>(sWidth - 1, x2); x++) {
 
 				int y = y1 + m * (x - x1);
 
-				if (y >= 0 && y < ScreenHeight()) {
+				if (y >= 0 && y < sHeight) {
 					double z = -1;
 					if (p1Pre.z == p2Pre.z) {
 						z = p1Pre.z;
 					}
 					else {
-						double sX = x - ScreenWidth() / 2.0;
-						double sY = y - ScreenHeight() / 2.0;
+						double sX = x - sWidth / 2.0;
+						double sY = y - sHeight / 2.0;
 						//Vector3D v(sX, sY, fov);
 						//double t = n.dotProduct(p1Pre) / n.dotProduct(v);
 						z = c / (n.x * sX + n.y * sY + n.z * fov);
@@ -104,17 +112,17 @@ private:
 			}
 
 			float k = (float)((int)(x2 - x1)) / (int)(y2 - y1);
-			for (int y = std::max<int>(0, y1); y <= std::min<int>(ScreenHeight() - 1, y2); y++) {
+			for (int y = std::max<int>(0, y1); y <= std::min<int>(sHeight - 1, y2); y++) {
 				int x = x1 + k * (y - y1);
 
-				if (x >= 0 && x < ScreenWidth()) {
+				if (x >= 0 && x < sWidth) {
 					double z = -1;
 					if (p1Pre.z == p2Pre.z) {
 						z = p1Pre.z;
 					}
 					else {
-						double sX = x - ScreenWidth() / 2.0;
-						double sY = y - ScreenHeight() / 2.0;
+						double sX = x - sWidth / 2.0;
+						double sY = y - sHeight / 2.0;
 						//Vector3D v(sX, sY, fov);
 						//double t = n.dotProduct(p1Pre) / n.dotProduct(v);
 						//z = v.z * t;
@@ -189,26 +197,26 @@ private:
 
 		if ((int)(upperPoint->y) != (int)(midPoint->y)) {
 
-			for (int i = std::max<int>(0, (int)(upperPoint->y)); i <= std::min<int>((int)(midPoint->y), ScreenHeight() - 1); i++) {
+			for (int i = std::max<int>(0, (int)(upperPoint->y)); i <= std::min<int>((int)(midPoint->y), sHeight - 1); i++) {
 
 				int leftBound = leftMostSlope * (i - upperPoint->y) + upperPoint->x;
 				int rightBound = rightMostSlope * (i - upperPoint->y) + upperPoint->x;
 
 				if (leftBound < 0)
 					leftBound = 0;
-				else if (leftBound >= ScreenWidth()) {
+				else if (leftBound >= sWidth) {
 					continue;
 				}
-				if (rightBound >= ScreenWidth())
-					rightBound = ScreenWidth() - 1;
+				if (rightBound >= sWidth)
+					rightBound = sWidth - 1;
 				else if (rightBound < 0) {
 					continue;
 				}
 
 				for (int j = leftBound; j <= rightBound; j++) {
 					if (useZBuffer) {
-						double dy = i - ScreenHeight() / 2.0;
-						double dx = j - ScreenWidth() / 2.0;
+						double dy = i - sHeight / 2.0;
+						double dx = j - sWidth / 2.0;
 
 						//Vector3D v(dx, dy, fov);
 						//double t = normalVector.dotProduct(p1Pre) / normalVector.dotProduct(v);
@@ -243,7 +251,7 @@ private:
 			rightMostSlope = temp;
 		}
 
-		for (int i = std::min<int>(ScreenHeight() - 1, (int)lowerPoint->y); i > std::max<int>(0, (int)(midPoint->y)); i--) {
+		for (int i = std::min<int>(sHeight - 1, (int)lowerPoint->y); i > std::max<int>(0, (int)(midPoint->y)); i--) {
 
 			int leftBound = leftMostSlope * (i - lowerPoint->y) + lowerPoint->x;
 			int rightBound = rightMostSlope * (i - lowerPoint->y) + lowerPoint->x;
@@ -251,11 +259,11 @@ private:
 
 			if (leftBound < 0)
 				leftBound = 0;
-			else if (leftBound >= ScreenWidth()) {
+			else if (leftBound >= sWidth) {
 				continue;
 			}
-			if (rightBound >= ScreenWidth())
-				rightBound = ScreenWidth() - 1;
+			if (rightBound >= sWidth)
+				rightBound = sWidth - 1;
 			else if (rightBound < 0) {
 				continue;
 			}
@@ -264,8 +272,8 @@ private:
 			for (int j = leftBound; j <= rightBound; j++) {
 				if (useZBuffer) {
 
-					double dy = i - ScreenHeight() / 2.0;
-					double dx = j - ScreenWidth() / 2.0;
+					double dy = i - sHeight / 2.0;
+					double dx = j - sWidth / 2.0;
 
 					//Vector3D v(dx, dy, fov);
 					//double t = normalVector.dotProduct(p1Pre) / normalVector.dotProduct(v);
@@ -288,8 +296,8 @@ private:
 	}
 
 	void projectPoint(Vector3D* point, float fov) {
-		point->x = point->x * fov / point->z + ScreenWidth() / 2;
-		point->y = point->y * fov / point->z + ScreenHeight() / 2;
+		point->x = point->x * fov / point->z + sWidth / 2;
+		point->y = point->y * fov / point->z + sHeight / 2;
 	}
 
 	struct Tri {
@@ -491,7 +499,7 @@ public:
 		int x = (int)p.x;
 		int y = (int)p.y;
 
-		if (p.z <= 0 || x < 0 || x >= ScreenWidth() || y < 0 || y >= ScreenHeight()) {
+		if (p.z <= 0 || x < 0 || x >= sWidth || y < 0 || y >= sHeight) {
 			return;
 		}
 

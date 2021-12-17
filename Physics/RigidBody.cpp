@@ -294,8 +294,13 @@ void RigidBody::moveInTime(double time) {
 	
 		setToOrientation(orientation.applyRotor(Rotor(rotationAxis, rotationMagnitude)));
 	}
-	else {
-		transformation3D::translatePoints(&pointsToTransform, linMove);
+	else if (linMove.notZero()) {
+		for (Vector3D* p : pointsToTransform) {
+			p->x += linMove.x;
+			p->y += linMove.y;
+			p->z += linMove.z;
+		}
+		//transformation3D::translatePoints(&pointsToTransform, linMove);
 	}
 	
 }

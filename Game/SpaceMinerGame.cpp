@@ -71,7 +71,8 @@ bool SpaceMinerGame::OnUserCreate() {
 	//station = new SpaceStation(this, Vector3D(0, 0, 0));
 
 	//shop->setIsOpen(true);
-	 
+	
+	setDimensions();
 	initZBuffer();
 
 	initMenu();

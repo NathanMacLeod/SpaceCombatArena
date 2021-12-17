@@ -44,7 +44,7 @@ void Asteroid::createRockMesh(Vector3D pos, double size, double detail, double d
 		//random var
 		float randFactor = 1 - 2 * ((float)rand() / (float)RAND_MAX);
 		//double r = size * abs(p->getUnitVector().dotProduct(Vector3D(0, -1, 0))) * (1 + randMag * randFactor);
-		double r = size * (1 + roughness * randFactor);
+		double r = size *(1 + roughness * randFactor);
 
 		*p = pos.add(p->getUnitVector().multiply(r));
 	}

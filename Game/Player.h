@@ -66,7 +66,7 @@ private:
 	double timeStep;
 	Vector3D savedPrevVel;
 	bool targetLocked;
-	CooldownTimer targetLockTime = CooldownTimer(2);
+	CooldownTimer targetLockTime = CooldownTimer(1.5);
 	CooldownTimer missileRechargeTime = CooldownTimer(20);
 	CooldownTimer missileFireRate = CooldownTimer(0.5);
 	CooldownTimer damageDisplayTime = CooldownTimer(0.5);

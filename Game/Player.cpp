@@ -369,12 +369,12 @@ void Player::fireBullet(SpaceMinerGame* game) {
 			spawnPos = spawnPos.add(offset);
 			break;
 		case Gatling:
-			variation = Vector3D(0.5 - (float)rand() / RAND_MAX, 0.5 - (float)rand() / RAND_MAX, 0.5 - (float)rand() / RAND_MAX).getUnitVector().multiply(0.04);
+			variation = Vector3D(0.5 - (float)rand() / RAND_MAX, 0.5 - (float)rand() / RAND_MAX, 0.5 - (float)rand() / RAND_MAX).getUnitVector().multiply(0.035);
 			break;
 		}
 
 
-		Bullet* bullet = new Bullet(spawnPos, body->getOrientation(), body->getVelocity().add(dir.add(variation).multiply(bulletVel)), 700, body->getID(), olc::RED, olc::WHITE, true);
+		Bullet* bullet = new Bullet(spawnPos, body->getOrientation(), body->getVelocity().add(dir.add(variation).multiply(bulletVel)), 1400, body->getID(), olc::RED, olc::WHITE, true);
 		game->addProjectile(bullet);
 	}
 }
@@ -491,6 +491,22 @@ void Player::drawPlayerUI(SpaceMinerGame* g, double FOV) {
 						g->DrawLine(p1.x, p1.y, p2.x, p2.y, color);
 					}
 				}
+
+				/*if (hasGunsight && enemyDist <= 1.5) {
+					double r2 = 7;
+					Vector3D leadPos = getPos().add(Projectile::calculateLeadPoint(getPos(), target->getPos(), body->getVelocity(), target->getRigidBody()->getVelocity(),
+						bulletVel, false, bulletSpawnDist, targetPrevVel, timeStep));
+					Vector3D leadScreenPos = g->getPixelCoord(leadPos, camPos, camOrient, FOV);
+					g->DrawCircle(leadScreenPos.x, leadScreenPos.y, r2, olc::RED);
+
+					Vector3D r1ToR2 = leadScreenPos.sub(enemyScreenPos);
+					double dist = r1ToR2.getMagnitude();
+					if (dist > r2 + r1) {
+						Vector3D p1 = enemyScreenPos.add(r1ToR2.multiply(r1 / dist));
+						Vector3D p2 = enemyScreenPos.add(r1ToR2.multiply((dist - r2) / dist));
+						g->DrawLine(p1.x, p1.y, p2.x, p2.y, olc::RED);
+					}
+				}*/
 			}
 			else if (equippedTool == Missiles) {
 				olc::Pixel mColor = targetLocked ? olc::RED : color;

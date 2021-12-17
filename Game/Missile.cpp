@@ -13,7 +13,7 @@ Missile::Missile(Vector3D pos, Rotor orientation, Vector3D vel, PhysicsObject* t
 	if (playerMissile) {
 		angularDampFactor = 30;
 		linearDampFactor = 15;
-		forwardThrust = 4000;
+		forwardThrust = 5000;
 		pitchRate = 55;
 		yawRate = 55;
 
@@ -23,6 +23,7 @@ Missile::Missile(Vector3D pos, Rotor orientation, Vector3D vel, PhysicsObject* t
 
 	}
 	else {
+		maxAngle = cos(3.14159 / 3);
 		angularDampFactor = 12.0;
 		linearDampFactor = 3;
 		forwardThrust = 2200;
