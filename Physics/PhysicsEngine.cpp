@@ -277,7 +277,7 @@ void PhysicsEngine::detectAndResolveCollisions(RigidBody* body1, RigidBody* body
 	//and resolve that collision
 	bool colFound = getColDetectInfo(body1, body2, &supPoints, &norm, &colPoint, &colDepth, &isFaceCollision, &collider, &collidee);
 	double ogDepth = colDepth;
-	if (colFound && false) {
+	/*if (colFound) {
 		double netT = 0;
 		int maxItr = 5;
 		double eps = 1;
@@ -295,7 +295,7 @@ void PhysicsEngine::detectAndResolveCollisions(RigidBody* body1, RigidBody* body
 		}
 		body1->moveInTime(-netT);
 		body2->moveInTime(-netT);
-	}
+	}*/
 
 	auto t3 = std::chrono::system_clock::now();
 	if (colFound) {
@@ -326,14 +326,19 @@ void PhysicsEngine::detectAndResolveCollisions(RigidBody* body1, RigidBody* body
 				Vector3D velRel = vCldeP0.sub(vCldrP0);
 				double normVel = norm.dotProduct(velRel);
 				resolveImpulses(collider, collidee, norm, average, supPoints, (normVel < gravity.getMagnitude() / (2.25)) ? 0 : collidee->getRestitution());
+
+				//trying something new
+				pushBodiesApart(collider, collidee, norm, (contactColl) ? 1/*0.15*/ * colDepth : colDepth);
 			}
 
 		}
 		else if (!collidee->verifyCollisionPointNotExiting(collider, norm, colPoint)) {
 			resolveImpulses(collider, collidee, norm, colPoint, supPoints, (collidee->getRestitution() + collider->getRestitution()) / 2.0);
+			//trying push only if bodies are not exiting
+			pushBodiesApart(collider, collidee, norm, (contactColl) ? 1/*0.15*/ * colDepth : colDepth);
 		}
 
-		pushBodiesApart(collider, collidee, norm, (contactColl) ? 1/*0.15*/ * colDepth : colDepth);
+		//pushBodiesApart(collider, collidee, norm, (contactColl) ? 1/*0.15*/ * colDepth : colDepth);
 		auto t4 = std::chrono::system_clock::now();
 
 		std::chrono::duration<float> narrow = t2 - t1;
