@@ -26,7 +26,7 @@ ConvexHull::~ConvexHull() {
 	for (RigidSurface* s : surfaces) {
 		delete s;
 	}
-	for (Vector3D* p : colPoints) {
+	for (Vector3D* p : allPoints) {
 		delete p;
 	}
 	for (Edge* e : colEdges) {
@@ -61,6 +61,7 @@ void ConvexHull::findColPointsEdges() {
 
 		for (int i = 0; i < s->getPoints()->size(); i++) {
 			Vector3D* p = s->getPoints()->at(i);
+			allPoints.push_back(p);
 			bool pAlreadyAdded = false;
 			for (Vector3D* cp : colPoints) {
 				if (*cp == *p) {

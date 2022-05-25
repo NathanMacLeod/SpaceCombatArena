@@ -58,6 +58,7 @@ void AsteroidChunk::unloadAllChunks(SpaceMinerGame* game) {
 			delete chunk;
 		}
 	}
+	activeChunks.clear();
 }
 
 double AsteroidChunk::getChunkSize() {
@@ -84,6 +85,7 @@ void AsteroidChunk::unloadChunk(SpaceMinerGame* game, int x, int y, int z) {
 			ast->markUnloaded();
 		}
 		delete chunk;
+		activeChunks.erase(v);
 	}
 }
 

@@ -323,6 +323,7 @@ void SpaceMinerGame::initMenu() {
 	double density = 0.5 * 350 / (worldSize * worldSize * worldSize);
 	AsteroidChunk::setUniverseProperties(2000, worldSize, density);
 	AsteroidChunk::loadChunksAtPos(this, 0, 0, 0);
+
 	cameraPos = Vector3D(0, 0, 0);
 	cameraOrientation = Rotor();
 }
@@ -631,7 +632,8 @@ void SpaceMinerGame::clickMainMenu() {
 		if (getMenuButtonHovered(ScreenHeight() * playButtonY, menuSize, playStr.size())) {
 			currWave = 0;
 			currentState = InbetweenWave;
-			AsteroidChunk::unloadAllChunks(this);
+			//AsteroidChunk::unloadAllChunks(this);
+			clearEverything();
 			player = new Player(Vector3D(200, 0, 0), this);
 			pEngine.addRigidBody(player->getRigidBody());
 		}

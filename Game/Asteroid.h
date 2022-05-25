@@ -13,7 +13,7 @@ private:
 public:
 	~Asteroid() {};
 	Asteroid(Vector3D position, double size);
-	static void createRockMesh(Vector3D pos, double size, double detail, double density, double roughness, olc::Pixel lineColor, olc::Pixel color, RigidBody** bodyOut, PolyModel** meshOut);
+	static void createRockMesh(Vector3D pos, double size, int detail, double density, double roughness, olc::Pixel lineColor, olc::Pixel color, RigidBody** bodyOut, PolyModel** meshOut);
 	static double pickAsteroidSize(float weight);
 	void performDeathActions(SpaceMinerGame* game);
 	void markUnloaded();

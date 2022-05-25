@@ -30,6 +30,7 @@ public:
 private:
 	std::vector<RigidSurface*> surfaces;
 	std::vector<Vector3D*> colPoints;
+	std::vector<Vector3D*> allPoints;
 	std::vector<Edge*> colEdges;
 	Vector3D centerOfMass;
 	double collisionRadius;

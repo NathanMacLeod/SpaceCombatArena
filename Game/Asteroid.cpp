@@ -9,7 +9,7 @@ Asteroid::Asteroid(Vector3D position, double size) {
 	unloaded = false;
 }
 
-void Asteroid::createRockMesh(Vector3D pos, double size, double detail, double density, double roughness, olc::Pixel lineColor, olc::Pixel color, RigidBody** bodyOut, PolyModel** meshOut) {
+void Asteroid::createRockMesh(Vector3D pos, double size, int detail, double density, double roughness, olc::Pixel lineColor, olc::Pixel color, RigidBody** bodyOut, PolyModel** meshOut) {
 
 	Vector3D p1(-1, -1, -1);
 	Vector3D p2(1, -1, -1);
