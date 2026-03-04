@@ -53,7 +53,10 @@
     <ClInclude Include="Math\Rotor.h" />
     <ClInclude Include="Math\transformation3D.h" />
     <ClInclude Include="Math\Vector3D.h" />
+    <ClInclude Include="OLCEngine\miniaudio.h" />
+    <ClInclude Include="OLCEngine\olcPGEX_MiniAudio.h" />
     <ClInclude Include="OLCEngine\olcPGEX_Sound.h" />
+    <ClInclude Include="OLCEngine\olcPGEX_SplashScreen.h" />
     <ClInclude Include="OLCEngine\olcPixelGameEngine.h" />
     <ClInclude Include="OLCEngine\PixelEngine3D.h" />
     <ClInclude Include="OLCEngine\Polygon3D.h" />
@@ -182,6 +185,8 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -221,6 +226,8 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

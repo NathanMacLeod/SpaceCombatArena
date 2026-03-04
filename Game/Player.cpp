@@ -97,7 +97,7 @@ void Player::drawInventory(SpaceMinerGame* g) {
 
 			g->FillRect(x, y, invSize, invSize, color);
 
-			sprintf_s(buff, "%s: %d", Ore::getAbbrev(m), inventory[i]);
+			sprintf(buff, "%s: %d", Ore::getAbbrev(m).c_str(), inventory[i]);
 			g->DrawString(x + invSize / 2.0 - 4 * strlen(buff), y + invSize / 2.0 - 4, buff, textColor, 1);
 		}
 		else {
@@ -438,7 +438,7 @@ void Player::drawPlayerUI(SpaceMinerGame* g, double FOV) {
 			g->DrawRect(centerX - refillBarWidth/2, centerY + 12, refillBarWidth, refillBarHeight, color);
 		}
 		else {
-			sprintf_s(buff, "MISSILE: %d", nRockets);
+			sprintf(buff, "MISSILE: %d", nRockets);
 			g->DrawString(centerX - 5 * 8, centerY + lockOnRadius + 4, buff, color, 1);
 		}
 	}
@@ -470,7 +470,7 @@ void Player::drawPlayerUI(SpaceMinerGame* g, double FOV) {
 			r1 = std::max<float>(r1Min, r1);
 			Vector3D enemyScreenPos = g->getPixelCoord(target->getPos(), camPos, camOrient, FOV);
 			double enemyDist = getKMToP(target->getPos());
-			sprintf_s(buff, "%.2f KM", enemyDist);
+			sprintf(buff, "%.2f KM", enemyDist);
 			g->DrawString(enemyScreenPos.x - 3 * 8, enemyScreenPos.y + r1 + 4, buff, color, 1);
 
 			if (equippedTool == Guns) {
@@ -537,7 +537,7 @@ void Player::drawPlayerUI(SpaceMinerGame* g, double FOV) {
 	g->FillRect(g->ScreenWidth() / 2 - hpWidth / 2 + hpWidth * ((float)maxHp - hp) / maxHp, hpY, hpWidth * ((float)hp / maxHp), hpHeight, hpCol);
 	g->DrawRect(g->ScreenWidth() / 2 - hpWidth / 2, hpY, hpWidth, hpHeight, olc::WHITE);
 
-	sprintf_s(buff, "Score: %d\n", money);
+	sprintf(buff, "Score: %d\n", money);
 	std::string moneyMsg(buff);
 	g->DrawString(g->ScreenHeight() / 24, g->ScreenHeight() / 24, moneyMsg, olc::WHITE, 1);
 
@@ -563,7 +563,7 @@ void Player::drawPlayerUI(SpaceMinerGame* g, double FOV) {
 			g->DrawCircle(orePos.x, orePos.y, r, oreCol);
 
 			Ore::Material material = highlightedOre->getMaterial();
-			sprintf_s(buff, "%s\n\n$%d", Ore::getName(material), (int)Ore::getValue(material));
+			sprintf(buff, "%s\n\n$%d", Ore::getName(material), (int)Ore::getValue(material));
 			g->DrawString(orePos.x + r, orePos.y - r, buff, oreCol, 2);
 		}
 	}*/
@@ -585,9 +585,9 @@ void Player::drawPlayerUI(SpaceMinerGame* g, double FOV) {
 		g->DrawLine(astPos.x - r, astPos.y + r, astPos.x - r, astPos.y + r - r / 8, astCol);
 
 		double dist = getKMToP(asteroid->getPos());
-		sprintf_s(buff, "%.2f KM", dist);
+		sprintf(buff, "%.2f KM", dist);
 		g->DrawString(astPos.x - 3 * 8, astPos.y - r - 10, buff, astCol, 1);
-		sprintf_s(buff, "%d / %d", (int) asteroid->getHp(), (int) asteroid->getMaxHp());
+		sprintf(buff, "%d / %d", (int) asteroid->getHp(), (int) asteroid->getMaxHp());
 		g->DrawString(astPos.x - strlen(buff) * 8 / 2, astPos.y + r + 2, buff, astCol, 1);
 	}*/
 

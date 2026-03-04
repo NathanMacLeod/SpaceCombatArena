@@ -1,5 +1,6 @@
 #pragma once
 #include "olcPixelGameEngine.h"
+#include "olcPGEX_SplashScreen.h"
 #include "../Math/Vector3D.h"
 #include <thread>
 #include <stdio.h>
@@ -9,8 +10,6 @@
 #include "Polygon3D.h"
 #include "../Math/transformation3D.h"
 #include "../Math/Rotor.h"
-#include "olcPGEX_Sound.h"
-
 
 class PixelEngine3D : public olc::PixelGameEngine {
 
@@ -32,6 +31,7 @@ protected:
 	}
 
 private:
+	olc::SplashScreen sps;
 
 	int sHeight;
 	int sWidth;

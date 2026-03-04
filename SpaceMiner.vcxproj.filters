@@ -131,6 +131,15 @@
     <ClInclude Include="Math\Prob.h">
       <Filter>Math</Filter>
     </ClInclude>
+    <ClInclude Include="OLCEngine\olcPGEX_SplashScreen.h">
+      <Filter>OLCEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="OLCEngine\olcPGEX_MiniAudio.h">
+      <Filter>OLCEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="OLCEngine\miniaudio.h">
+      <Filter>OLCEngine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Math\Vector3D.cpp">

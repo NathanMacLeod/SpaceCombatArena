@@ -199,14 +199,14 @@ void ShopMenu::ShopItem::draw(PixelEngine3D* g, int x, int y, int width, int hei
 	g->DrawRect(x, y,width,  height, hovered? olc::RED : olc::CYAN);
 	g->DrawString(x + 0.05 * width, y + 4, title, olc::CYAN, 1);
 	g->DrawString(x + 0.05 * width, y + 22, description, olc::WHITE, 1);
-	sprintf_s(buff, "REQ: $%d ", cost);
+	sprintf(buff, "REQ: $%d ", cost);
 	g->DrawString(x + 0.05 * width, y + 50, buff, olc::WHITE, 1);
 
 	double xPos = x + 0.05 * width + 8 * strlen(buff);
 	for (int i = 0; i < Ore::N_TYPES; i++) {
 		if (oreReq[i] > 0) {
 			Ore::Material m = (Ore::Material) i;
-			sprintf_s(buff, "%s: %d ", Ore::getName(m).c_str(), oreReq[i]);
+			sprintf(buff, "%s: %d ", Ore::getName(m).c_str(), oreReq[i]);
 			g->DrawString(xPos, y + 50, buff, Ore::getColor(m), 1);
 			xPos += 8 * strlen(buff);
 		}
@@ -311,7 +311,7 @@ void ShopMenu::draw(SpaceMinerGame* g) {
 		std::string sellTitle("To Sell");
 		g->DrawString(x + width / 2 - sellTitle.size() * titleSize * 4, y + height / 1.9, sellTitle, olc::CYAN, titleSize);
 
-		sprintf_s(buff, "Currently will sell for: $%d", sellValue);
+		sprintf(buff, "Currently will sell for: $%d", sellValue);
 		std::string sellMessage(buff);
 		g->DrawString(x + width / 2 - sellMessage.size() * 4, y + height / 1.7, sellMessage, olc::CYAN, 1);
 
@@ -360,7 +360,7 @@ void ShopMenu::drawOreDisplay(SpaceMinerGame* g, int x, int y, int nCols, int ti
 
 			g->FillRect(tX, tY, tileSize, tileSize, color);
 
-			sprintf_s(buff, "%s: %d", Ore::getAbbrev(m), count);
+			sprintf(buff, "%s: %d", Ore::getAbbrev(m).c_str(), count);
 			g->DrawString(tX + tileSize / 2.0 - 4 * strlen(buff), tY + tileSize / 2.0 - 4, buff, textColor, 1);
 		}
 		else {

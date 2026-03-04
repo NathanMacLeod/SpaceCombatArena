@@ -14,6 +14,11 @@
 #include "ShopMenu.h"
 #include "AsteroidChunk.h"
 
+//forward decl audio class
+namespace olc {
+	class MiniAudio;
+}
+
 class SpaceMinerGame : public PixelEngine3D {
 public:
 
@@ -41,6 +46,7 @@ private:
 	std::vector<Ore*> ores;
 	std::vector<Enemy*> enemies;
 
+	std::unique_ptr<olc::MiniAudio> audio;
 	std::vector<int> damageSounds;
 	std::vector<int> explosionSounds;
 	std::vector<int> pewSounds;

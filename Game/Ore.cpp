@@ -78,7 +78,7 @@ Ore::Ore(Vector3D pos, Material type, MovingObject::DebrisType debrisType) {
 	}
 
 	life.reset();
-	pickedUp = false();
+	pickedUp = false;
 }
 
 Ore::Material Ore::pickTypeRandomly() {
